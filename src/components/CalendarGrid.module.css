@@ -1,0 +1,7 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-left: 1px solid #d8cfc4;
+  border-top: 1px solid #d8cfc4;
+  flex: 1;
+}

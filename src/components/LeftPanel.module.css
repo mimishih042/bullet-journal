@@ -1,0 +1,126 @@
+.leftPanel {
+  width: 280px;
+  flex-shrink: 0;
+  border-right: 1px solid #d8cfc4;
+  padding: 24px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  background: #faf7f2;
+}
+
+.panelHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #ddd4c4;
+}
+
+.yearRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.yearLabel {
+  font-size: 0.78rem;
+  color: #9a8878;
+  letter-spacing: 0.1em;
+  font-family: 'Georgia', serif;
+}
+
+.yearNavBtn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #b0a090;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.yearNavBtn:hover { color: #3a2010; }
+
+.monthName {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: normal;
+  font-style: italic;
+  color: #1e1208;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* ── Panel sections ──────────────────────────────────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sectionLabel {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #9a8878;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionLabel::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #ddd4c4;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: none;
+  border: none;
+  background: rgba(255,255,255,0.6);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: 'Georgia', serif;
+  font-size: 0.8rem;
+  color: #3a2818;
+  line-height: 1.65;
+  outline: none;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.textarea:focus {
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 0 0 1.5px #d0b898;
+}
+
+/* sticky note variant — applied alongside .textarea */
+.textareaNote {
+  background: #fef9c3;
+  min-height: 88px;
+}
+.textareaNote:focus {
+  background: #fef6a0;
+  box-shadow: 0 0 0 1.5px #d4c040;
+}
+
+/* ── Decorative sticker row ──────────────────────────── */
+.decos {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 8px;
+}
+
+.deco {
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: default;
+  transition: transform 0.15s;
+}
+.deco:hover { transform: scale(1.25); }
