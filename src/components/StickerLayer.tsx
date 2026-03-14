@@ -93,7 +93,6 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
 
   // Unique filter IDs so multiple stickers don't share the same SVG filter
   const backFilterId   = `stickerBack-${sticker.id}`;
-  const shadowFilterId = `stickerShadow-${sticker.id}`;
 
   return (
     <Draggable
@@ -127,12 +126,8 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
             <defs>
               <filter id={backFilterId}>
                 <feOffset dx="0" dy="0" in="SourceAlpha" result="shape" />
-                <feFlood floodColor="rgb(179,179,179)" result="flood" />
+                <feFlood floodColor="rgb(221 214 200)" result="flood" />
                 <feComposite operator="in" in="flood" in2="shape" />
-              </filter>
-              <filter id={shadowFilterId}>
-                <feDropShadow dx="1" dy="3" stdDeviation="3"
-                  floodColor="black" floodOpacity="0.45" />
               </filter>
             </defs>
           </svg>
@@ -149,7 +144,6 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
             {/* Front layer — clips upward to reveal the peel on hover */}
             <div
               className={styles.stickerMain}
-              style={{ filter: `url(#${shadowFilterId})` }}
             >
               <div className={styles.stickerMainInner}>
                 <img

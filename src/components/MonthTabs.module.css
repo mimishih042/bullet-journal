@@ -9,8 +9,9 @@
 
 .tab {
   flex: 1;
-  padding: 8px 2px 9px;
-  font-size: 0.56rem;
+  padding: 6px 2px;
+  font-size: 0.6rem;
+  font-weight: bold;
   font-family: "Bricolage Grotesque", sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -18,7 +19,7 @@
   background: #ddd6c8;
   border: 1px solid #bfb5a4;
   border-bottom: none;
-  border-radius: 8px 8px 0 0;
+  border-radius: 12px 12px 0 0;
   cursor: pointer;
   color: #8a7a6a;
   transition: background 0.12s, color 0.12s;
@@ -38,6 +39,5 @@
   position: relative;
   z-index: 1;
   margin-bottom: -1px;
-  padding-top: 10px;
-  font-weight: bold;
+  padding-top: 8px;
 }

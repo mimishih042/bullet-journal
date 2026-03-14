@@ -26,7 +26,7 @@
   --peel-start:      calc(-1 * var(--peel-p));
   --peel-end:        calc(100% + var(--peel-p));
   --peel-hover-pct:  15%;
-  --peel-active-pct: 25%;
+  --peel-active-pct: 20%;
 }
 
 /* ── Sticker layer container ─────────────────────────── */
@@ -88,7 +88,7 @@
     var(--peel-end)   var(--peel-end),
     var(--peel-start) var(--peel-end)
   );
-  transition: clip-path 0.4s ease-out;
+  transition: clip-path 0.3s ease-out;
   will-change: clip-path;
 }
 
@@ -109,8 +109,21 @@
   user-select: none;
 }
 
+/* ── Peel host for non-draggable contexts (e.g. settings panel) ─── */
+.stickerPeelHost {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  cursor: grab;
+}
+
+.stickerPeelHost:active { cursor: grabbing; }
+
 /* Hover: peel the front layer upward */
-.stickerWrap:hover .stickerMain {
+.stickerWrap:hover .stickerMain,
+.stickerPeelHost:hover .stickerMain {
   clip-path: polygon(
     var(--peel-start) var(--peel-hover-pct),
     var(--peel-end)   var(--peel-hover-pct),
@@ -119,7 +132,8 @@
   );
 }
 
-.stickerWrap:active .stickerMain {
+.stickerWrap:active .stickerMain,
+.stickerPeelHost:active .stickerMain {
   clip-path: polygon(
     var(--peel-start) var(--peel-active-pct),
     var(--peel-end)   var(--peel-active-pct),
@@ -180,7 +194,8 @@
 }
 
 /* Hover: expand the flap and move it into position */
-.stickerWrap:hover .stickerFlap {
+.stickerWrap:hover .stickerFlap,
+.stickerPeelHost:hover .stickerFlap {
   clip-path: polygon(
     var(--peel-start) var(--peel-start),
     var(--peel-end)   var(--peel-start),
@@ -190,7 +205,8 @@
   top: calc(-100% + 2 * var(--peel-hover-pct) - 1px);
 }
 
-.stickerWrap:active .stickerFlap {
+.stickerWrap:active .stickerFlap,
+.stickerPeelHost:active .stickerFlap {
   clip-path: polygon(
     var(--peel-start) var(--peel-start),
     var(--peel-end)   var(--peel-start),
