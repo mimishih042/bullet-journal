@@ -28,7 +28,7 @@
   top: 4px;
   left: 5px;
   font-size: 0.6rem;
-  font-family: 'Georgia', serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   color: #7a6050;
   z-index: 2;
   line-height: 1;
@@ -100,5 +100,11 @@
 .cell.dragOver { outline: 2px dashed #c0705a; outline-offset: -2px; }
 
 .actionBtn {
-  /* inherits layout from .uploadHint flex container */
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
 }

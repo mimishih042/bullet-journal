@@ -19,11 +19,9 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
   const [rotation,    setRotation]    = useState(sticker.rotation ?? 0);
   const [isAdjusting, setIsAdjusting] = useState(false);
 
-  // Pixel values derived from fractions + card dimensions
   const [pos,  setPos]  = useState({ x: sticker.x * cardWidth, y: sticker.y * cardHeight });
   const [size, setSize] = useState(sticker.width * cardWidth);
 
-  // Re-derive pixel pos/size whenever the card resizes
   useEffect(() => {
     if (cardWidth > 0 && cardHeight > 0) {
       setPos({ x: sticker.x * cardWidth, y: sticker.y * cardHeight });
@@ -93,6 +91,10 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
     document.addEventListener('mouseup',   onMouseUp);
   };
 
+  // Unique filter IDs so multiple stickers don't share the same SVG filter
+  const backFilterId   = `stickerBack-${sticker.id}`;
+  const shadowFilterId = `stickerShadow-${sticker.id}`;
+
   return (
     <Draggable
       nodeRef={outerRef as React.RefObject<HTMLElement>}
@@ -115,9 +117,70 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
           className={styles.sticker}
           style={{ transform: `rotate(${rotation}deg)`, width: size, height: size }}
         >
-          <img src={sticker.stickerDataURL} draggable={false} alt="" />
+          {/*
+            SVG filter definitions — scoped per sticker via unique IDs.
+            expandAndFill: fills the PNG's alpha shape with a flat gray
+                           → creates the "adhesive backing" appearance on the flap.
+            dropShadow:    shape-aware shadow on the front layer.
+          */}
+          <svg width="0" height="0" className={styles.filterSvg}>
+            <defs>
+              <filter id={backFilterId}>
+                <feOffset dx="0" dy="0" in="SourceAlpha" result="shape" />
+                <feFlood floodColor="rgb(179,179,179)" result="flood" />
+                <feComposite operator="in" in="flood" in2="shape" />
+              </filter>
+              <filter id={shadowFilterId}>
+                <feDropShadow dx="1" dy="3" stdDeviation="3"
+                  floodColor="black" floodOpacity="0.45" />
+              </filter>
+            </defs>
+          </svg>
 
-          {/* Rotate handle — top-centre */}
+          {/*
+            Peel container — rotated by --peel-angle (67°).
+            Because the clip-path on stickerMain uses percentage coords in the
+            container's LOCAL (rotated) space, the horizontal clip line appears
+            as a DIAGONAL line on screen, creating the angled peel effect.
+            Children counter-rotate by -67° so the sticker image stays upright.
+          */}
+          <div className={styles.peelContainer}>
+
+            {/* Front layer — clips upward to reveal the peel on hover */}
+            <div
+              className={styles.stickerMain}
+              style={{ filter: `url(#${shadowFilterId})` }}
+            >
+              <div className={styles.stickerMainInner}>
+                <img
+                  src={sticker.stickerDataURL}
+                  draggable={false}
+                  alt=""
+                  className={styles.stickerImg}
+                />
+              </div>
+            </div>
+
+            {/*
+              Back flap — same PNG, scaleY(-1) flipped + gray fill filter.
+              Positioned above stickerMain, slides into view on hover.
+              The gray fill makes it look like the adhesive backing paper.
+            */}
+            <div className={styles.stickerFlap}>
+              <div className={styles.stickerFlapInner}>
+                <img
+                  src={sticker.stickerDataURL}
+                  draggable={false}
+                  alt=""
+                  className={styles.stickerFlapImg}
+                  style={{ filter: `url(#${backFilterId})` }}
+                />
+              </div>
+            </div>
+
+          </div>
+
+          {/* Handles — siblings of peelContainer, unaffected by its rotation */}
           <div
             className={styles.rotateHandle}
             onMouseDown={startRotate}
@@ -126,14 +189,12 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
             ↻
           </div>
 
-          {/* Resize handle — bottom-right */}
           <div
             className={styles.resizeHandle}
             onMouseDown={startResize}
             title="Resize"
           />
 
-          {/* Delete button — top-right */}
           <button
             className={styles.deleteBtn}
             onClick={e => { e.stopPropagation(); onDelete(sticker.id); }}

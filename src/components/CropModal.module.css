@@ -1,0 +1,123 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #faf7f2;
+  border-radius: 12px;
+  padding: 20px;
+  width: 380px;
+  max-width: 95vw;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.shapePicker {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.shapeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid #d8cfc4;
+  background: #f0ebe3;
+  color: #7a6050;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.shapeBtn:hover {
+  border-color: #c0705a;
+  color: #c0705a;
+}
+
+.shapeBtnActive {
+  border-color: #c0705a;
+  background: #fdf0ec;
+  color: #c0705a;
+}
+
+.title {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 0.9rem;
+  color: #5a4030;
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.cropArea {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #1a1a1a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.zoomLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 0.75rem;
+  color: #7a6050;
+}
+
+.zoomSlider {
+  flex: 1;
+  accent-color: #c0705a;
+  cursor: pointer;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cancelBtn,
+.confirmBtn {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 0.8rem;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.cancelBtn {
+  background: #e8e0d6;
+  color: #5a4030;
+}
+
+.confirmBtn {
+  background: #c0705a;
+  color: #fff;
+}
+
+.cancelBtn:hover,
+.confirmBtn:hover {
+  opacity: 0.85;
+}

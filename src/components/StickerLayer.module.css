@@ -1,3 +1,35 @@
+/*
+  Peel mechanism (adapted from ReactBits StickerPeel):
+
+  1. peelContainer rotates by --peel-angle (67°).
+     The clip-path's percentage coords are in the container's LOCAL space,
+     so the horizontal peel line appears DIAGONAL (at 67°) on screen.
+
+  2. stickerMain: the front of the sticker.
+     Its clip-path top edge slides DOWN on hover, revealing the peel.
+     Children counter-rotate by -67° to keep the image visually upright.
+
+  3. stickerFlap: same PNG, scaleY(-1) flipped, gray SVG filter (backing).
+     Positioned above stickerMain (top: -100% - padding).
+     On hover its clip-path grows and top shifts to align with stickerMain's
+     new top edge — the two layers meet seamlessly at the peel line.
+
+  Math for flap top on hover (peelHover = 30%):
+    top = calc(-100% + 2 * 30% - 1px) = -40% - 1px
+    The -1px closes the 1-subpixel seam between front and back.
+*/
+
+/* ── CSS custom properties ───────────────────────────── */
+.sticker {
+  --peel-angle:      67deg;
+  --peel-p:          10px;
+  --peel-start:      calc(-1 * var(--peel-p));
+  --peel-end:        calc(100% + var(--peel-p));
+  --peel-hover-pct:  15%;
+  --peel-active-pct: 25%;
+}
+
+/* ── Sticker layer container ─────────────────────────── */
 .stickerLayer {
   position: absolute;
   inset: 0;
@@ -16,25 +48,162 @@
 
 .stickerWrap:active { cursor: grabbing; }
 
-/* ── Inner div — carries CSS rotation ────────────────── */
+/* ── Inner div — carries user rotation + size ────────── */
 .sticker {
   position: relative;
   display: inline-block;
 }
 
-.sticker img {
+/* ── SVG filter definitions (zero-size, off-screen) ─── */
+.filterSvg {
+  position: absolute;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/*
+  ── Peel container ────────────────────────────────────
+  Rotated by the peel angle so that a horizontal clip-path
+  inside it appears as a diagonal line on screen.
+*/
+.peelContainer {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--peel-angle));
+  transform-origin: center;
+}
+
+/*
+  ── Front layer (stickerMain) ─────────────────────────
+  Starts fully visible (clip covers entire element + padding).
+  On hover the top edge of the clip slides DOWN to --peel-hover-pct,
+  hiding the top strip and making it appear the sticker is peeling.
+*/
+.stickerMain {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    var(--peel-start) var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-end)   var(--peel-end),
+    var(--peel-start) var(--peel-end)
+  );
+  transition: clip-path 0.4s ease-out;
+  will-change: clip-path;
+}
+
+/* Counter-rotate so the image stays visually upright */
+.stickerMainInner {
+  width: 100%;
+  height: 100%;
+  transform: rotate(calc(-1 * var(--peel-angle)));
+  transform-origin: center;
+}
+
+.stickerImg {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  border-radius: 4px;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+  -webkit-user-select: none;
+  user-select: none;
 }
 
-/* Selection outline on hover / while adjusting */
+/* Hover: peel the front layer upward */
+.stickerWrap:hover .stickerMain {
+  clip-path: polygon(
+    var(--peel-start) var(--peel-hover-pct),
+    var(--peel-end)   var(--peel-hover-pct),
+    var(--peel-end)   var(--peel-end),
+    var(--peel-start) var(--peel-end)
+  );
+}
+
+.stickerWrap:active .stickerMain {
+  clip-path: polygon(
+    var(--peel-start) var(--peel-active-pct),
+    var(--peel-end)   var(--peel-active-pct),
+    var(--peel-end)   var(--peel-end),
+    var(--peel-start) var(--peel-end)
+  );
+}
+
+/*
+  ── Back flap (stickerFlap) ───────────────────────────
+  Same image, vertically flipped (scaleY(-1)) + gray SVG fill filter
+  → looks like the adhesive backing paper of the sticker.
+
+  At rest: collapsed (degenerate polygon, zero height, above viewport).
+  On hover: expands to fill the peel strip and slides down to align
+            precisely with stickerMain's new top edge.
+
+  top formula on hover:
+    calc(-100% + 2 * var(--peel-hover-pct) - 1px)
+    With peel-hover-pct=30%: -100% + 60% - 1px = -40% - 1px
+    The flap (height=100%) sits from -40% to +60% of the container.
+    After scaleY(-1) and clip(0 → 30%), the visible strip aligns with
+    the peel line at 30% of the front layer. The -1px closes the seam.
+*/
+.stickerFlap {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: calc(-100% - 2 * var(--peel-p));
+  transform: scaleY(-1);
+  clip-path: polygon(
+    var(--peel-start) var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-start) var(--peel-start)
+  ); /* collapsed — zero area at rest */
+  transition: clip-path 0.4s ease-out, top 0.4s ease-out;
+  will-change: clip-path, top;
+}
+
+/* Counter-rotate the flap content too */
+.stickerFlapInner {
+  width: 100%;
+  height: 100%;
+  transform: rotate(calc(-1 * var(--peel-angle)));
+  transform-origin: center;
+}
+
+.stickerFlapImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  -webkit-user-select: none;
+  user-select: none;
+  /* filter: url(#stickerBack-ID) is set via inline style in TSX */
+}
+
+/* Hover: expand the flap and move it into position */
+.stickerWrap:hover .stickerFlap {
+  clip-path: polygon(
+    var(--peel-start) var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-end)   var(--peel-hover-pct),
+    var(--peel-start) var(--peel-hover-pct)
+  );
+  top: calc(-100% + 2 * var(--peel-hover-pct) - 1px);
+}
+
+.stickerWrap:active .stickerFlap {
+  clip-path: polygon(
+    var(--peel-start) var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-end)   var(--peel-active-pct),
+    var(--peel-start) var(--peel-active-pct)
+  );
+  top: calc(-100% + 2 * var(--peel-active-pct) - 1px);
+}
+
+/* ── Selection outline on hover / while adjusting ────── */
 .stickerWrap:hover .sticker,
 .stickerWrap.isActive .sticker {
-  outline: 1.5px dashed rgba(80, 120, 220, 0.55);
+  outline: 1.5px dashed rgba(80, 120, 220, 0.45);
   outline-offset: 3px;
 }
 
@@ -72,7 +241,7 @@
   cursor: grab;
   display: flex;
   justify-content: center;
-  z-index: 2;
+  z-index: 5;
 }
 
 .rotateHandle:active { cursor: grabbing; }
@@ -87,7 +256,7 @@
   background: rgba(60, 100, 210, 0.88);
   border-radius: 10px;
   cursor: nwse-resize;
-  z-index: 2;
+  z-index: 5;
 }
 
 /* ── Delete button ───────────────────────────────────── */
@@ -107,6 +276,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  z-index: 5;
   padding: 0;
 }

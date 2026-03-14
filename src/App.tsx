@@ -7,21 +7,28 @@ import styles from './App.module.css';
 const today = new Date();
 
 export default function App() {
-  const [viewYear,  setViewYear]  = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [viewYear,   setViewYear]   = useState(today.getFullYear());
+  const [viewMonth,  setViewMonth]  = useState(today.getMonth());
+  const [panelOpen,  setPanelOpen]  = useState(false);
 
   return (
-    <>
-      <BackgroundControl />
-      <div className={styles.journalWrapper}>
-        <MonthTabs activeMonth={viewMonth} onSelect={setViewMonth} />
-        <CalendarCard
-          year={viewYear}
-          month={viewMonth}
-          onPrevYear={() => setViewYear(y => y - 1)}
-          onNextYear={() => setViewYear(y => y + 1)}
-        />
+    <div className={styles.pageRoot}>
+      <div className={styles.journalArea}>
+        <div className={styles.journalWrapper}>
+          <MonthTabs activeMonth={viewMonth} onSelect={setViewMonth} />
+          <CalendarCard
+            year={viewYear}
+            month={viewMonth}
+            onPrevYear={() => setViewYear(y => y - 1)}
+            onNextYear={() => setViewYear(y => y + 1)}
+          />
+        </div>
       </div>
-    </>
+
+      <BackgroundControl
+        open={panelOpen}
+        onToggle={() => setPanelOpen(o => !o)}
+      />
+    </div>
   );
 }

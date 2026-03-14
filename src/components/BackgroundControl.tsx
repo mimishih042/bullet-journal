@@ -3,15 +3,17 @@ import { saveSetting, loadSetting, saveStickerItem, loadAllStickers, deleteStick
 import type { StickerItem } from '../storage';
 import styles from './BackgroundControl.module.css';
 
-export default function BackgroundControl() {
-  const [open,         setOpen]         = useState(false);
-  const [bgColor,      setBgColor]      = useState('#1a1612');
-  const [stickerPack,  setStickerPack]  = useState<StickerItem[]>([]);
-  const popoverRef     = useRef<HTMLDivElement>(null);
-  const fileInputRef   = useRef<HTMLInputElement>(null);
+interface Props {
+  open: boolean;
+  onToggle: () => void;
+}
+
+export default function BackgroundControl({ open, onToggle }: Props) {
+  const [bgColor,       setBgColor]      = useState('#1a1612');
+  const [stickerPack,   setStickerPack]  = useState<StickerItem[]>([]);
+  const fileInputRef    = useRef<HTMLInputElement>(null);
   const stickerInputRef = useRef<HTMLInputElement>(null);
 
-  // restore saved background on mount
   useEffect(() => {
     (async () => {
       const type  = await loadSetting('bg-type');
@@ -26,20 +28,8 @@ export default function BackgroundControl() {
     })();
   }, []);
 
-  // load sticker pack from IndexedDB on mount
   useEffect(() => {
     loadAllStickers().then(setStickerPack);
-  }, []);
-
-  // close popover on outside click
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
   }, []);
 
   const applyColor = async (color: string) => {
@@ -80,19 +70,34 @@ export default function BackgroundControl() {
   };
 
   return (
-    <div className={styles.bgControl} ref={popoverRef}>
+    <>
+      {/* Toggle button — always fixed top-right */}
       <button
-        className={styles.bgBtn}
-        title="Change background"
-        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        className={`${styles.bgBtn} ${open ? styles.bgBtnActive : ''}`}
+        title={open ? 'Close panel' : 'Change background & stickers'}
+        onClick={onToggle}
       >
         🎨
       </button>
 
-      {open && (
-        <div className={styles.bgPopover}>
-          {/* ── Background section ── */}
-          <p className={styles.bgLabel}>Background</p>
+      {/* In-flow panel wrapper — animates width to push journal left */}
+      <div className={`${styles.panelOuter} ${open ? styles.panelOpen : ''}`}>
+      {/* Side panel */}
+      <div className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <span className={styles.panelTitle}>Settings</span>
+          <button
+            className={styles.panelClose}
+            title="Close"
+            onClick={onToggle}
+          >
+            ×
+          </button>
+        </div>
+
+        <div className={styles.panelBody}>
+          {/* ── Background ── */}
+          <p className={styles.sectionLabel}>Background</p>
           <label className={styles.bgOption}>
             <span>Color</span>
             <input
@@ -102,10 +107,10 @@ export default function BackgroundControl() {
             />
           </label>
           <button
-            className={styles.bgOptionBtn}
+            className={styles.actionBtn}
             onClick={() => fileInputRef.current?.click()}
           >
-            Upload image
+            Upload background image
           </button>
           <input
             ref={fileInputRef}
@@ -115,12 +120,12 @@ export default function BackgroundControl() {
             onChange={e => e.target.files?.[0] && applyImageFile(e.target.files[0])}
           />
 
-          {/* ── Sticker Pack section ── */}
+          {/* ── Sticker Pack ── */}
           <div className={styles.divider} />
-          <p className={styles.bgLabel}>Sticker Pack</p>
+          <p className={styles.sectionLabel}>Sticker Pack</p>
 
           {stickerPack.length > 0 && (
-            <div className={styles.stickerPackGrid}>
+            <div className={styles.stickerGrid}>
               {stickerPack.map(sticker => (
                 <div key={sticker.id} className={styles.stickerThumbWrap}>
                   <img
@@ -150,11 +155,11 @@ export default function BackgroundControl() {
           )}
 
           {stickerPack.length === 0 && (
-            <p className={styles.stickerPackEmpty}>No stickers yet</p>
+            <p className={styles.stickerEmpty}>No stickers yet</p>
           )}
 
           <button
-            className={styles.bgOptionBtn}
+            className={styles.actionBtn}
             onClick={() => stickerInputRef.current?.click()}
           >
             + Add sticker
@@ -172,7 +177,9 @@ export default function BackgroundControl() {
             }}
           />
         </div>
-      )}
-    </div>
+      </div>
+      </div>
+
+    </>
   );
 }

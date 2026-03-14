@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import styles from './CalendarCell.module.css';
 import { savePhoto, loadPhoto, deletePhoto } from '../storage';
+import CropModal from './CropModal';
 
 interface Props {
   day: number;
@@ -12,6 +13,7 @@ interface Props {
 export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Props) {
   const [photoURL,   setPhotoURL]   = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -24,15 +26,24 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
     return () => { cancelled = true; };
   }, [dateKey]);
 
-  const handleFile = (file: File) => {
+  const openCrop = (file: File) => {
     if (!dateKey || !file.type.startsWith('image/')) return;
     const reader = new FileReader();
-    reader.onload = async e => {
-      const url = e.target!.result as string;
-      setPhotoURL(url);
-      await savePhoto(dateKey, url);
-    };
+    reader.onload = e => setPendingImage(e.target!.result as string);
     reader.readAsDataURL(file);
+    // Reset input so the same file can be re-selected after cancel
+    if (inputRef.current) inputRef.current.value = '';
+  };
+
+  const handleCropConfirm = async (croppedDataURL: string) => {
+    if (!dateKey) return;
+    setPendingImage(null);
+    setPhotoURL(croppedDataURL);
+    await savePhoto(dateKey, croppedDataURL);
+  };
+
+  const handleCropCancel = () => {
+    setPendingImage(null);
   };
 
   const handleRemovePhoto = async (e: React.MouseEvent) => {
@@ -51,7 +62,7 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
     e.preventDefault();
     setIsDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    if (file) openCrop(file);
   };
 
   const cellClass = [
@@ -63,53 +74,63 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
   ].filter(Boolean).join(' ');
 
   return (
-    <div
-      className={cellClass}
-      onClick={handleCellClick}
-      onDragOver={e => { e.preventDefault(); if (!isOtherMonth) setIsDragOver(true); }}
-      onDragLeave={() => setIsDragOver(false)}
-      onDrop={handleDrop}
-    >
-      <span className={styles.cellDate}>{day}</span>
+    <>
+      <div
+        className={cellClass}
+        onClick={handleCellClick}
+        onDragOver={e => { e.preventDefault(); if (!isOtherMonth) setIsDragOver(true); }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+      >
+        <span className={styles.cellDate}>{day}</span>
 
-      {photoURL && (
-        <>
-          <img className={styles.cellPhoto} src={photoURL} alt="" />
-          <button
-            className={styles.removeBtn}
-            title="Remove photo"
-            onClick={handleRemovePhoto}
-          >
-            ×
-          </button>
-        </>
-      )}
-
-      {!isOtherMonth && (
-        <div className={styles.uploadHint}>
-          {photoURL ? (
+        {photoURL && (
+          <>
+            <img className={styles.cellPhoto} src={photoURL} alt="" />
             <button
-              className={styles.actionBtn}
-              title="Replace photo"
-              onClick={e => { e.stopPropagation(); inputRef.current?.click(); }}
+              className={styles.removeBtn}
+              title="Remove photo"
+              onClick={handleRemovePhoto}
             >
-              📷
+              ×
             </button>
-          ) : (
-            <span>＋</span>
-          )}
-        </div>
-      )}
+          </>
+        )}
 
-      {!isOtherMonth && dateKey && (
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+        {!isOtherMonth && (
+          <div className={styles.uploadHint}>
+            {photoURL ? (
+              <button
+                className={styles.actionBtn}
+                title="Replace photo"
+                onClick={e => { e.stopPropagation(); inputRef.current?.click(); }}
+              >
+                +
+              </button>
+            ) : (
+              <span>＋</span>
+            )}
+          </div>
+        )}
+
+        {!isOtherMonth && dateKey && (
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={e => e.target.files?.[0] && openCrop(e.target.files[0])}
+          />
+        )}
+      </div>
+
+      {pendingImage && (
+        <CropModal
+          imageSrc={pendingImage}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
         />
       )}
-    </div>
+    </>
   );
 }
