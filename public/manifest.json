@@ -1,0 +1,23 @@
+{
+  "name": "StickerDays Journal",
+  "short_name": "StickerDays",
+  "description": "A personal sticker journal calendar",
+  "display": "standalone",
+  "start_url": "/",
+  "background_color": "#ece7df",
+  "theme_color": "#ece7df",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

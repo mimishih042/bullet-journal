@@ -5,11 +5,13 @@ node_modules/
 dist/
 
 # TypeScript cache
-tsconfig.tsbuildinfo
 *.tsbuildinfo
 
 # Vite
 .vite/
+
+# Claude
+.claude/
 
 # OS
 .DS_Store

@@ -22,6 +22,24 @@ export default function App() {
   const [panelOpen,  setPanelOpen]  = useState(true);
   const isNarrow = useIsNarrow();
 
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
+  const [installed,     setInstalled]     = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', () => setInstalled(true));
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    (installPrompt as any).prompt();
+    const { outcome } = await (installPrompt as any).userChoice;
+    if (outcome === 'accepted') setInstalled(true);
+    setInstallPrompt(null);
+  };
+
   if (isNarrow) {
     return (
       <div className={styles.mobileNotice}>
@@ -56,6 +74,12 @@ export default function App() {
         year={viewYear}
         month={viewMonth}
       />
+
+      {installPrompt && !installed && (
+        <button className={styles.installBtn} onClick={handleInstall} data-print-hidden>
+          📌 Pin to your desktop
+        </button>
+      )}
     </div>
   );
 }

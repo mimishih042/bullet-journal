@@ -6,6 +6,51 @@ import EditIcon from '../assets/edit.svg'
 import styles from './BackgroundControl.module.css';
 import StickerPeelPreview from './StickerPeelPreview';
 
+/**
+ * Fetches the project font from Google Fonts and injects it as a base64
+ * @font-face style element so html-to-image can embed it on iOS Safari,
+ * where cross-origin font fetching from a canvas is blocked.
+ * Returns the injected <style> element so the caller can remove it later.
+ */
+let _cachedFontCSS: string | null = null;
+
+async function inlineFont(): Promise<HTMLStyleElement | null> {
+  try {
+    if (!_cachedFontCSS) {
+      const cssRes = await fetch(
+        'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap'
+      );
+      if (!cssRes.ok) return null;
+      let css = await cssRes.text();
+
+      // Replace every url(...) with a base64 data URI
+      const urlMatches = [...css.matchAll(/url\(([^)]+)\)/g)];
+      for (const match of urlMatches) {
+        const fontUrl = match[1].replace(/['"]/g, '');
+        try {
+          const fontRes = await fetch(fontUrl);
+          const blob = await fontRes.blob();
+          const dataUri = await new Promise<string>(resolve => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          css = css.replace(match[0], `url(${dataUri})`);
+        } catch { /* skip unresolvable URLs */ }
+      }
+      _cachedFontCSS = css;
+    }
+
+    const style = document.createElement('style');
+    style.setAttribute('data-font-embed', '');
+    style.textContent = _cachedFontCSS;
+    document.head.appendChild(style);
+    return style;
+  } catch {
+    return null;
+  }
+}
+
 /** Crops a PNG/JPEG dataURL to the smallest rect containing all non-transparent pixels. */
 function trimTransparent(dataURL: string): Promise<string> {
   return new Promise(resolve => {
@@ -140,9 +185,13 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       ].join('\n');
       document.head.appendChild(noShadowStyle);
 
+      // Embed font as base64 so iOS Safari canvas can use it
+      const fontStyle = await inlineFont();
+
       // Capture the journal wrapper at 2x
       const journalDataUrl = await toPng(wrapper, { pixelRatio: scale, cacheBust: true });
 
+      fontStyle?.remove();
       noShadowStyle.remove();
       if (hideTabs && tabsEl) tabsEl.style.display = '';
 

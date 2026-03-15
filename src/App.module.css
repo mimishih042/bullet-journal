@@ -1,3 +1,26 @@
+/* ── Install button ──────────────────────────────────── */
+.installBtn {
+  position: fixed;
+  top: 20px;
+  left: 100px;
+  transform: translateX(-50%);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: 8px 10px 8px 8px;
+  border-radius: var(--space-3);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-card);
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+  transition: background var(--duration-base);
+  z-index: var(--z-top);
+  white-space: nowrap;
+}
+
+.installBtn:hover {
+  background: var(--color-surface-hover);
+}
+
 /* ── Page root — full-viewport flex row ──────────────── */
 .pageRoot {
   display: flex;
