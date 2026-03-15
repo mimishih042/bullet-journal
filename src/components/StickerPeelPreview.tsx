@@ -13,8 +13,7 @@ interface Props {
  */
 export default function StickerPeelPreview({ src, filterId }: Props) {
   const backFilterId   = `stickerBack-prev-${filterId}`;
-  const shadowFilterId = `stickerShadow-prev-${filterId}`;
-
+  
   return (
     <div className={styles.stickerPeelHost}>
       <div
@@ -28,17 +27,12 @@ export default function StickerPeelPreview({ src, filterId }: Props) {
               <feFlood floodColor="rgb(179,179,179)" result="flood" />
               <feComposite operator="in" in="flood" in2="shape" />
             </filter>
-            <filter id={shadowFilterId}>
-              <feDropShadow dx="1" dy="3" stdDeviation="3"
-                floodColor="black" floodOpacity="0.45" />
-            </filter>
           </defs>
         </svg>
 
         <div className={styles.peelContainer}>
           <div
             className={styles.stickerMain}
-            style={{ filter: `url(#${shadowFilterId})` }}
           >
             <div className={styles.stickerMainInner}>
               <img src={src} draggable={false} alt="" className={styles.stickerImg} />

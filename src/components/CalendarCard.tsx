@@ -59,24 +59,32 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear }: Pr
     e.preventDefault();
 
     const { dataURL } = JSON.parse(data) as { id: string; dataURL: string };
-    const rect    = cardRef.current.getBoundingClientRect();
-    const pixelX  = e.clientX - rect.left;
-    const pixelY  = e.clientY - rect.top;
-    const fracSize = 80 / rect.width;
+    const rect   = cardRef.current.getBoundingClientRect();
+    const pixelX = e.clientX - rect.left;
+    const pixelY = e.clientY - rect.top;
 
-    const newSticker: PlacedSticker = {
-      id: crypto.randomUUID(),
-      stickerDataURL: dataURL,
-      x: (pixelX - 40) / rect.width,
-      y: (pixelY - 40) / rect.height,
-      width:  fracSize,
-      height: fracSize,
-      rotation: 0,
+    // Read natural dimensions so non-square stickers aren't forced into a square box
+    const img = new Image();
+    img.onload = () => {
+      const fracW  = 80 / rect.width;
+      const fracH  = fracW * (img.naturalHeight / img.naturalWidth);
+      const halfPixH = (fracH * rect.width) / 2;
+
+      const newSticker: PlacedSticker = {
+        id: crypto.randomUUID(),
+        stickerDataURL: dataURL,
+        x: (pixelX - 40)       / rect.width,
+        y: (pixelY - halfPixH) / rect.height,
+        width:  fracW,
+        height: fracH,
+        rotation: 0,
+      };
+
+      const updated = [...placedStickers, newSticker];
+      setPlacedStickers(updated);
+      savePlacedStickers(monthKey, updated);
     };
-
-    const updated = [...placedStickers, newSticker];
-    setPlacedStickers(updated);
-    savePlacedStickers(monthKey, updated);
+    img.src = dataURL;
   };
 
   const handleStickerMove = (id: string, x: number, y: number) => {

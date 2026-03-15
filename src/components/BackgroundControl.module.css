@@ -1,31 +1,29 @@
 /* ── Toggle button ─────────────────────────────────────────────────────── */
 .bgBtn {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 10px;
+  right: 10px;
   z-index: 300;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(6px);
+  background: none;
   cursor: pointer;
   font-size: 1.1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, transform 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
 .bgBtn:hover {
-  background: rgba(255, 255, 255, 0.28);
+  width: 42px;
+  height: 42px;
+  transform: rotate(7deg);
+  transition: ease;
 }
 
 .bgBtnActive {
-  background: rgba(255, 255, 255, 0.28);
-  transform: rotate(15deg);
+  transform: rotate(7deg);
 }
 
 /* ── In-flow wrapper — animates width to push journal left ──────────────── */
@@ -228,5 +226,15 @@
   text-align: center;
   padding: 6px 0;
   font-style: italic;
+}
+
+/* ── Print / Export ────────────────────────────────────────────────────── */
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #1e1208;
+  cursor: pointer;
 }
 

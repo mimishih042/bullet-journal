@@ -22,7 +22,7 @@
 /* ── CSS custom properties ───────────────────────────── */
 .sticker {
   --peel-angle:      67deg;
-  --peel-p:          10px;
+  --peel-p:          5px;
   --peel-start:      calc(-1 * var(--peel-p));
   --peel-end:        calc(100% + var(--peel-p));
   --peel-hover-pct:  15%;
@@ -44,6 +44,12 @@
   cursor: grab;
   user-select: none;
   display: inline-block;
+  z-index: 1;
+}
+
+.stickerWrap:hover,
+.stickerWrap.isActive {
+  z-index: 1000;
 }
 
 .stickerWrap:active { cursor: grabbing; }
@@ -190,7 +196,6 @@
   object-fit: contain;
   -webkit-user-select: none;
   user-select: none;
-  /* filter: url(#stickerBack-ID) is set via inline style in TSX */
 }
 
 /* Hover: expand the flap and move it into position */
@@ -214,6 +219,26 @@
     var(--peel-start) var(--peel-active-pct)
   );
   top: calc(-100% + 2 * var(--peel-active-pct) - 1px);
+}
+
+/* ── Suppress peel while rotating / resizing ─────────── */
+.stickerWrap.isActive:hover .stickerMain {
+  clip-path: polygon(
+    var(--peel-start) var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-end)   var(--peel-end),
+    var(--peel-start) var(--peel-end)
+  );
+}
+
+.stickerWrap.isActive:hover .stickerFlap {
+  clip-path: polygon(
+    var(--peel-start) var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-start) var(--peel-start)
+  );
+  top: calc(-100% - 2 * var(--peel-p));
 }
 
 /* ── Selection outline on hover / while adjusting ────── */
@@ -245,15 +270,15 @@
 /* ── Rotate handle ───────────────────────────────────── */
 .rotateHandle {
   position: absolute;
-  bottom: -12px;
+  bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: rgba(60, 100, 210, 0.88);
-  color: #fff;
-  font-size: 0.9rem;
+  background: rgb(180 159 139);
+  color: #f0ebe3;
+  font-size: 14px;
   cursor: grab;
   display: flex;
   justify-content: center;
@@ -265,14 +290,28 @@
 /* ── Resize handle ───────────────────────────────────── */
 .resizeHandle {
   position: absolute;
-  bottom: -8px;
-  right: -8px;
-  width: 10px;
-  height: 10px;
-  background: rgba(60, 100, 210, 0.88);
-  border-radius: 10px;
+  width: 12px;
+  height: 12px;
+  background: #8a7a6a;  
+  border-radius: 3px;
   cursor: nwse-resize;
   z-index: 5;
+}
+
+.resizeHandleBottomRight {
+  bottom: -8px;
+  right: -8px;
+}
+
+.resizeHandleBottomLeft {
+  bottom: -8px;
+  left: -8px;
+  cursor: nesw-resize;
+}
+
+.resizeHandleUpperLeft {
+  top: -8px;
+  left: -8px;
 }
 
 /* ── Delete button ───────────────────────────────────── */

@@ -13,9 +13,11 @@ export default function App() {
 
   return (
     <div className={styles.pageRoot}>
-      <div className={styles.journalArea}>
-        <div className={styles.journalWrapper}>
-          <MonthTabs activeMonth={viewMonth} onSelect={setViewMonth} />
+      <div className={styles.journalArea} id="journal-area">
+        <div className={styles.journalWrapper} id="journal-wrapper">
+          <div id="month-tabs">
+            <MonthTabs activeMonth={viewMonth} onSelect={setViewMonth} />
+          </div>
           <CalendarCard
             year={viewYear}
             month={viewMonth}

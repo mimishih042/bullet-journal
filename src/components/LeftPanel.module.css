@@ -68,6 +68,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1;
+  min-height: 0;
 }
 
 .sectionLabel {
@@ -83,7 +85,8 @@
 
 .textarea {
   width: 100%;
-  min-height: 200px;
+  flex: 1;
+  min-height: 0;
   resize: none;
   background: none;
   border: none;

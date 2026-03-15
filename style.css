@@ -7,3 +7,20 @@ body {
   font-family: "Bricolage Grotesque", sans-serif;
   transition: background 0.4s;
 }
+
+@media print {
+  /* Hide the settings toggle button and settings panel */
+  [data-print-hidden] { display: none !important; }
+
+  /* Full-bleed print area */
+  body { min-height: unset; }
+
+  #journal-area {
+    flex: 1 !important;
+    padding: 0 !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Hide month tabs when printing without them */
+  body.print-no-tabs #month-tabs { display: none !important; }
+}

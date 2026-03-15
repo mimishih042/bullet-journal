@@ -9,15 +9,19 @@
 }
 
 .modal {
-  background: #faf7f2;
-  border-radius: 12px;
-  padding: 20px;
+  background-color: #f8f6f2;
+  background-image:
+    linear-gradient(rgba(180, 170, 158, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180, 170, 158, 0.25) 1px, transparent 1px);
+  background-size: 14px 14px;
+  border: 1px solid #bfb5a4;
+  border-radius: 6px;
+  padding: 15px;
   width: 380px;
-  max-width: 95vw;
+  max-width: 90vw;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
 .shapePicker {
@@ -58,6 +62,8 @@
   margin: 0;
   text-align: center;
   letter-spacing: 0.05em;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed;
 }
 
 .cropArea {
@@ -67,6 +73,12 @@
   background: #1a1a1a;
   border-radius: 8px;
   overflow: hidden;
+}
+
+/* For stamp mode: suppress the square crop-rect so only the stamp mask is visible */
+.stampCropArea {
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .controls {

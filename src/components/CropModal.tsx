@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import styles from './CropModal.module.css';
@@ -28,8 +29,12 @@ const STAMP_H = 318;
 
 // SVG path string for the fill-rule:evenodd overlay (darkens area outside stamp)
 // fill-rule:evenodd overlay: outer rect minus stamp polygon = darkens area outside stamp
+// The outer rect is intentionally oversized so the dark fill bleeds beyond
+// the SVG viewBox when overflow="visible" is set on the element.  The
+// .cropArea container (overflow:hidden) clips it flush to the crop box,
+// eliminating the side gaps that appear with "xMidYMid meet" scaling.
 const STAMP_OVERLAY_PATH =
-  `M0,0 H${STAMP_W} V${STAMP_H} H0 Z M` +
+  `M-2000,-2000 H${STAMP_W + 2000} V${STAMP_H + 2000} H-2000 Z M` +
   STAMP_POINTS_STR.trim().split(' ').join(' L');
 
 // ── Canvas helpers ─────────────────────────────────────────────────────────
@@ -126,6 +131,7 @@ function StampOverlay() {
     <svg
       viewBox={`0 0 ${STAMP_W} ${STAMP_H}`}
       preserveAspectRatio="xMidYMid meet"
+      overflow="visible"
       style={{
         position: 'absolute',
         inset: 0,
@@ -163,6 +169,22 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
   const [shape, setShape] = useState<Shape>('square');
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
+  // Measure the crop container so we can pass its exact CSS-pixel size to
+  // react-easy-crop when stamp mode is active.  This makes the crop rect
+  // fill the full container, so croppedAreaPixels covers the same region
+  // the stamp overlay is drawn over.
+  const cropAreaRef  = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState(0);
+
+  useLayoutEffect(() => {
+    if (!cropAreaRef.current) return;
+    const measure = () => setContainerSize(cropAreaRef.current!.offsetWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(cropAreaRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   const onCropComplete = useCallback((_: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels);
   }, []);
@@ -173,7 +195,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
     onConfirm(result);
   };
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onCancel}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <p className={styles.title}>Crop photo</p>
@@ -193,7 +215,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
         </div>
 
         {/* Cropper */}
-        <div className={styles.cropArea}>
+        <div className={styles.cropArea} ref={cropAreaRef}>
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -204,6 +226,12 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
             showGrid={false}
+            classes={shape === 'stamp' ? { cropAreaClassName: styles.stampCropArea } : undefined}
+            cropSize={
+              shape === 'stamp' && containerSize > 0
+                ? { width: containerSize, height: containerSize }
+                : undefined
+            }
           />
           {/* Custom overlay for stamp shape */}
           {shape === 'stamp' && <StampOverlay />}
@@ -230,6 +258,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
