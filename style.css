@@ -3,9 +3,9 @@
 
 body {
   min-height: 100vh;
-  background: #1a1612;
-  font-family: "Bricolage Grotesque", sans-serif;
-  transition: background 0.4s;
+  background: var(--color-page-bg);
+  font-family: var(--font-sans);
+  transition: background var(--duration-xslow);
 }
 
 @media print {

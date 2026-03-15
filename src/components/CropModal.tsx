@@ -228,7 +228,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
             showGrid={false}
             classes={shape === 'stamp' ? { cropAreaClassName: styles.stampCropArea } : undefined}
             cropSize={
-              shape === 'stamp' && containerSize > 0
+              containerSize > 0
                 ? { width: containerSize, height: containerSize }
                 : undefined
             }

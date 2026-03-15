@@ -50,9 +50,11 @@ function trimTransparent(dataURL: string): Promise<string> {
 interface Props {
   open: boolean;
   onToggle: () => void;
+  year: number;
+  month: number;
 }
 
-export default function BackgroundControl({ open, onToggle }: Props) {
+export default function BackgroundControl({ open, onToggle, year, month }: Props) {
   const [bgColor, setBgColor] = useState('#1a1612');
   const [stickerPack, setStickerPack] = useState<StickerItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -195,7 +197,8 @@ export default function BackgroundControl({ open, onToggle }: Props) {
 
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
-      a.download = 'journal.png';
+      const monthName = new Date(year, month).toLocaleString('en-US', { month: 'long' }).toLowerCase();
+      a.download = `${monthName}-${year}-journal.png`;
       a.click();
     } finally {
       setExporting(false);

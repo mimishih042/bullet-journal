@@ -30,6 +30,8 @@ export default function App() {
       <BackgroundControl
         open={panelOpen}
         onToggle={() => setPanelOpen(o => !o)}
+        year={viewYear}
+        month={viewMonth}
       />
     </div>
   );

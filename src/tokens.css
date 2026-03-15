@@ -1,0 +1,105 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Design Tokens — single source of truth for all
+   colours, spacing, typography, shadows, and z-index.
+   Import once in main.tsx; use via var(--token) anywhere.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+:root {
+
+  /* ─── Colour · Page ──────────────────────────────── */
+  --color-page-bg:        #1a1612;
+
+  /* ─── Colour · Surfaces ──────────────────────────── */
+  --color-surface-paper:  #f8f6f2;   /* panel, left-panel, modal */
+  --color-surface-card:   #f5f0e8;   /* calendar card, active tab */
+  --color-surface-cell:   #faf7f2;   /* calendar cell (current month) */
+  --color-surface-inset:  #f0ebe3;   /* other-month cell, shape-btn bg */
+  --color-surface-hover:  #e8e0d0;   /* tab hover */
+  --color-surface-muted:  #e8e0d6;   /* cancel-button bg */
+  --color-surface-subtle: #ddd6c8;   /* inactive tabs, action-btn hover */
+
+  /* ─── Colour · Borders ───────────────────────────── */
+  --color-border:         #bfb5a4;   /* card, tab, modal border */
+  --color-border-soft:    #d8cfc4;   /* cell grid, day headers, panel edge */
+
+  /* ─── Colour · Text ──────────────────────────────── */
+  --color-ink:            #1e1208;   /* primary dark text */
+  --color-ink-body:       #3a2818;   /* body / notes text */
+  --color-ink-secondary:  #5a4030;   /* secondary headings, modal title */
+  --color-ink-tertiary:   #7a6050;   /* labels, cell date, zoom label */
+  --color-ink-muted:      #8a7a6a;   /* inactive tabs, nav buttons */
+  --color-ink-label:      #9a8878;   /* section labels, day headers */
+  --color-ink-faint:      #b0a090;   /* month number */
+  --color-ink-disabled:   #c0b8ae;   /* other-month date */
+
+  /* ─── Colour · Accent ────────────────────────────── */
+  --color-accent:         #c0705a;   /* rust / terracotta */
+  --color-accent-bg:      #fdf0ec;   /* accent tint background */
+
+  /* ─── Colour · Danger ────────────────────────────── */
+  --color-danger:         rgba(180, 40, 20, 0.88);
+
+  /* ─── Colour · Sticker controls ─────────────────── */
+  --color-handle:         rgb(180 159 139);
+  --color-handle-text:    #f0ebe3;
+
+  /* ─── Colour · Grid pattern ──────────────────────── */
+  --color-grid-line:      rgba(180, 170, 158, 0.25);
+  --bg-grid:
+    linear-gradient(var(--color-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
+  --bg-grid-size:         14px 14px;
+
+  /* ─── Spacing ────────────────────────────────────── */
+  --space-1:   3px;
+  --space-2:   4px;
+  --space-3:   6px;
+  --space-4:   8px;
+  --space-5:   10px;
+  --space-6:   12px;
+  --space-7:   14px;
+  --space-8:   16px;
+  --space-9:   18px;
+  --space-10:  20px;
+  --space-12:  24px;
+  --space-16:  32px;
+
+  /* ─── Border Radius ──────────────────────────────── */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-full: 9999px;
+
+  /* ─── Typography ─────────────────────────────────── */
+  --font-sans:     "Bricolage Grotesque", sans-serif;
+
+  --text-2xs:  0.58rem;   /* section labels, day-header cells */
+  --text-xs:   0.6rem;    /* month tabs, calendar cell dates */
+  --text-sm:   0.72rem;   /* badge / helper text */
+  --text-base: 0.8rem;    /* body text, form buttons */
+  --text-md:   0.82rem;   /* panel UI elements */
+  --text-lg:   0.9rem;    /* modal title */
+  --text-xl:   1.1rem;    /* upload-hint icon */
+  --text-2xl:  1.5rem;    /* month number */
+  --text-4xl:  3rem;      /* month name heading */
+
+  /* ─── Shadows ────────────────────────────────────── */
+  --shadow-card:  0 20px 80px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15);
+  --shadow-panel: -6px 0 32px rgba(0, 0, 0, 0.35);
+
+  /* ─── Transition Durations ───────────────────────── */
+  --duration-fast:  0.12s;
+  --duration-base:  0.15s;
+  --duration-slow:  0.3s;
+  --duration-xslow: 0.4s;
+
+  /* ─── Z-index Layers ─────────────────────────────── */
+  --z-card:      1;
+  --z-tabs:      2;
+  --z-handles:   5;
+  --z-stickers:  20;
+  --z-drag:      25;
+  --z-panel-btn: 300;
+  --z-top:       1000;
+}

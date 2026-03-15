@@ -5,28 +5,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-top);
 }
 
 .modal {
-  background-color: #f8f6f2;
-  background-image:
-    linear-gradient(rgba(180, 170, 158, 0.25) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(180, 170, 158, 0.25) 1px, transparent 1px);
-  background-size: 14px 14px;
-  border: 1px solid #bfb5a4;
-  border-radius: 6px;
+  background-color: var(--color-surface-paper);
+  background-image: var(--bg-grid);
+  background-size: var(--bg-grid-size);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   padding: 15px;
   width: 380px;
   max-width: 90vw;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-7);
 }
 
 .shapePicker {
   display: flex;
-  gap: 8px;
+  gap: var(--space-4);
   justify-content: center;
 }
 
@@ -36,42 +34,46 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 8px;
-  border: 2px solid #d8cfc4;
-  background: #f0ebe3;
-  color: #7a6050;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  color: var(--color-ink-tertiary);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition: border-color var(--duration-base), color var(--duration-base), background var(--duration-base);
 }
 
 .shapeBtn:hover {
-  border-color: #c0705a;
-  color: #c0705a;
+  color: var(--color-ink);
+  border-color: var(--color-border);
 }
 
 .shapeBtnActive {
-  border-color: #c0705a;
-  background: #fdf0ec;
-  color: #c0705a;
+  background: var(--color-surface-card);
+  color: var(--color-ink);
+  border-color: var(--color-border);
 }
 
 .title {
-  font-family: "Bricolage Grotesque", sans-serif;
-  font-size: 0.9rem;
-  color: #5a4030;
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  color: var(--color-ink-secondary);
   margin: 0;
   text-align: center;
   letter-spacing: 0.05em;
-  padding-bottom: 10px;
+  padding-bottom: var(--space-5);
   border-bottom: 1px dashed;
 }
 
 .cropArea {
   position: relative;
-  width: 100%;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 15px;
+  margin-bottom: 15px;
   aspect-ratio: 1;
-  background: #1a1a1a;
-  border-radius: 8px;
+  background: var(--color-surface-paper);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -84,52 +86,55 @@
 .controls {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-5);
 }
 
 .zoomLabel {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-family: "Bricolage Grotesque", sans-serif;
+  gap: var(--space-5);
+  font-family: var(--font-sans);
   font-size: 0.75rem;
-  color: #7a6050;
+  color: var(--color-ink-tertiary);
+  margin-bottom: var(--space-5);
 }
 
 .zoomSlider {
   flex: 1;
-  accent-color: #c0705a;
+  accent-color: var(--color-surface-muted);
   cursor: pointer;
 }
 
 .buttons {
   display: flex;
-  gap: 8px;
+  gap: var(--space-4);
   justify-content: flex-end;
 }
 
 .cancelBtn,
 .confirmBtn {
-  font-family: "Bricolage Grotesque", sans-serif;
-  font-size: 0.8rem;
-  padding: 6px 16px;
-  border-radius: 6px;
-  border: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  padding: 7px var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-ink);
   cursor: pointer;
-  transition: opacity 0.15s;
+  text-align: center;
+  transition: background var(--duration-base);
 }
 
 .cancelBtn {
-  background: #e8e0d6;
-  color: #5a4030;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-ink);
+  border: none;
 }
 
 .confirmBtn {
-  background: #c0705a;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-ink);
 }
 
 .cancelBtn:hover,
 .confirmBtn:hover {
-  opacity: 0.85;
+  background: var(--color-surface-subtle);
 }

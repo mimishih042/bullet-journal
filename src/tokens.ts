@@ -1,0 +1,71 @@
+/**
+ * Typed design token references for use in inline styles / TSX.
+ * For CSS modules, use var(--token-name) directly.
+ */
+export const tokens = {
+  color: {
+    pageBg:          'var(--color-page-bg)',
+    surfacePaper:    'var(--color-surface-paper)',
+    surfaceCard:     'var(--color-surface-card)',
+    surfaceCell:     'var(--color-surface-cell)',
+    surfaceInset:    'var(--color-surface-inset)',
+    surfaceHover:    'var(--color-surface-hover)',
+    surfaceMuted:    'var(--color-surface-muted)',
+    surfaceSubtle:   'var(--color-surface-subtle)',
+    border:          'var(--color-border)',
+    borderSoft:      'var(--color-border-soft)',
+    ink:             'var(--color-ink)',
+    inkBody:         'var(--color-ink-body)',
+    inkSecondary:    'var(--color-ink-secondary)',
+    inkTertiary:     'var(--color-ink-tertiary)',
+    inkMuted:        'var(--color-ink-muted)',
+    inkLabel:        'var(--color-ink-label)',
+    inkFaint:        'var(--color-ink-faint)',
+    inkDisabled:     'var(--color-ink-disabled)',
+    accent:          'var(--color-accent)',
+    accentBg:        'var(--color-accent-bg)',
+    danger:          'var(--color-danger)',
+    handle:          'var(--color-handle)',
+    handleText:      'var(--color-handle-text)',
+  },
+  shadow: {
+    card:  'var(--shadow-card)',
+    panel: 'var(--shadow-panel)',
+  },
+  font: {
+    sans: 'var(--font-sans)',
+  },
+  text: {
+    '2xs': 'var(--text-2xs)',
+    xs:    'var(--text-xs)',
+    sm:    'var(--text-sm)',
+    base:  'var(--text-base)',
+    md:    'var(--text-md)',
+    lg:    'var(--text-lg)',
+    xl:    'var(--text-xl)',
+    '2xl': 'var(--text-2xl)',
+    '4xl': 'var(--text-4xl)',
+  },
+  radius: {
+    sm:   'var(--radius-sm)',
+    md:   'var(--radius-md)',
+    lg:   'var(--radius-lg)',
+    xl:   'var(--radius-xl)',
+    full: 'var(--radius-full)',
+  },
+  duration: {
+    fast:  'var(--duration-fast)',
+    base:  'var(--duration-base)',
+    slow:  'var(--duration-slow)',
+    xslow: 'var(--duration-xslow)',
+  },
+  z: {
+    card:     'var(--z-card)',
+    tabs:     'var(--z-tabs)',
+    handles:  'var(--z-handles)',
+    stickers: 'var(--z-stickers)',
+    drag:     'var(--z-drag)',
+    panelBtn: 'var(--z-panel-btn)',
+    top:      'var(--z-top)',
+  },
+} as const;
