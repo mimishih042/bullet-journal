@@ -23,3 +23,38 @@
   flex-direction: column;
   width: min(1100px, 95%);
 }
+
+/* ── Mobile notice ───────────────────────────────────── */
+.mobileNotice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-16) var(--space-10);
+  text-align: center;
+  gap: var(--space-8);
+  background: var(--color-page-bg);
+}
+
+.mobileNoticeIcon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.mobileNoticeTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-2xl);
+  font-weight: bold;
+  font-style: italic;
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+.mobileNoticeText {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-ink-tertiary);
+  line-height: 1.65;
+  max-width: 280px;
+}

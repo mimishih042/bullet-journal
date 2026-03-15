@@ -314,7 +314,9 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             )}
 
             {stickerPack.length === 0 && (
-              <p className={styles.stickerEmpty}>No stickers yet</p>
+              <p className={styles.stickerEmpty}>
+                No stickers yet — upload your own PNG or JPEG images and drag them onto the calendar!
+              </p>
             )}
 
             <button

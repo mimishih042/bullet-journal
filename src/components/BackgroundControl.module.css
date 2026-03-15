@@ -220,10 +220,10 @@
 
 .stickerEmpty {
   font-size: var(--text-sm);
-  color: rgba(255, 255, 255, 0.25);
-  text-align: center;
-  padding: var(--space-3) 0;
+  color: var(--color-ink-body);
+  text-align: left;
   font-style: italic;
+  line-height: 1.6;
 }
 
 /* ── Print / Export ────────────────────────────────────────────────────── */
