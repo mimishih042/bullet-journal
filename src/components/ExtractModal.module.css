@@ -64,17 +64,13 @@
   font-weight: 600;
 }
 
-/* ── How-to image placeholder ─────────────────────────────────────────── */
-/* Replace contents with an <img> when the image is ready.               */
-.howToPlaceholder {
+.placeholderImg {
   width: 100%;
-  aspect-ratio: 16 / 9;
   border: 1.5px dashed var(--color-border);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
 }
 
-/* When you add a real image, use this class on the <img> element */
 .howToImg {
   width: 100%;
   aspect-ratio: 16 / 9;

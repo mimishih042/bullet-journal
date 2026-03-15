@@ -438,7 +438,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               onClick={() => setShowExtractModal(true)}
               disabled={extracting}
             >
-              {extracting ? 'Extracting…' : '✦ Extract stickers from photo'}
+              {extracting ? 'Extracting…' : '✦ Extract stickers from sheet'}
             </button>
             <input
               ref={sheetInputRef}

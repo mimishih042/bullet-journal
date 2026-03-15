@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import styles from './ExtractModal.module.css';
+import ExtractExample from '../assets/extract-example.png'
 
 interface Props {
   onUpload: () => void;
@@ -24,16 +25,9 @@ export default function ExtractModal({ onUpload, onCancel }: Props) {
             <li>Make sure stickers have clear, visible edges</li>
             <li>Good lighting and a straight-on angle give the best results</li>
           </ul>
-
-          {/*
-            ── How-it-works image ──────────────────────────────────────────
-            Replace the placeholder div below with an <img> tag when ready.
-            Example:
-              <img src="/how-to-extract.png" alt="How sticker extraction works" className={styles.howToImg} />
-          */}
-          <div className={styles.howToPlaceholder}>
-            {/* add your how-to image here */}
-          </div>
+          {/* <div className={styles.howToPlaceholder}> */}
+            <img src={ExtractExample} alt='' className={styles.placeholderImg}/>
+          {/* </div> */}
         </div>
 
         <div className={styles.buttons}>
