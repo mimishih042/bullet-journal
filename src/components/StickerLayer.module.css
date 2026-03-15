@@ -37,18 +37,20 @@
   z-index: var(--z-stickers);
 }
 
-/* ── Outer wrapper — Draggable target ────────────────── */
+/* ── Outer wrapper ───────────────────────────────────── */
 .stickerWrap {
   position: absolute;
   pointer-events: all;
   cursor: grab;
   user-select: none;
+  touch-action: none;   /* prevents page scroll while gesturing */
   display: inline-block;
   z-index: 1;
 }
 
 .stickerWrap:hover,
-.stickerWrap.isActive {
+.stickerWrap.isActive,
+.stickerWrap.isSelected {
   z-index: var(--z-top);
 }
 
@@ -241,9 +243,10 @@
   top: calc(-100% - 2 * var(--peel-p));
 }
 
-/* ── Selection outline on hover / while adjusting ────── */
+/* ── Selection outline on hover / while adjusting / selected ── */
 .stickerWrap:hover .sticker,
-.stickerWrap.isActive .sticker {
+.stickerWrap.isActive .sticker,
+.stickerWrap.isSelected .sticker {
   outline: 1.5px dashed rgba(80, 120, 220, 0.45);
   outline-offset: 3px;
 }
@@ -262,7 +265,10 @@
 .stickerWrap:hover .deleteBtn,
 .stickerWrap.isActive .rotateHandle,
 .stickerWrap.isActive .resizeHandle,
-.stickerWrap.isActive .deleteBtn {
+.stickerWrap.isActive .deleteBtn,
+.stickerWrap.isSelected .rotateHandle,
+.stickerWrap.isSelected .resizeHandle,
+.stickerWrap.isSelected .deleteBtn {
   opacity: 1;
   pointer-events: all;
 }
@@ -281,6 +287,7 @@
   font-size: 14px;
   cursor: grab;
   display: flex;
+  align-items: center;
   justify-content: center;
   z-index: var(--z-handles);
 }
@@ -333,4 +340,44 @@
   justify-content: center;
   z-index: var(--z-handles);
   padding: 0;
+}
+
+/* ── Touch devices: larger tap targets ───────────────── */
+@media (pointer: coarse) {
+  .rotateHandle {
+    bottom: -22px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .resizeHandle {
+    width: 44px;
+    height: 44px;
+    background: radial-gradient(circle 6px at center, var(--color-ink-muted) 100%, transparent 100%);
+    border-radius: 0;
+  }
+
+  .resizeHandleBottomRight {
+    bottom: -22px;
+    right: -22px;
+  }
+
+  .resizeHandleBottomLeft {
+    bottom: -22px;
+    left: -22px;
+  }
+
+  .resizeHandleUpperLeft {
+    top: -22px;
+    left: -22px;
+  }
+
+  .deleteBtn {
+    top: -22px;
+    right: -22px;
+    width: 44px;
+    height: 44px;
+    font-size: 1rem;
+  }
 }
