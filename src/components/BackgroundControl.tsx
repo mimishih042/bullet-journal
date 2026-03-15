@@ -208,8 +208,24 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       // Embed font as base64 so iOS Safari canvas can use it
       const fontStyle = await inlineFont();
 
-      // Capture the journal wrapper at 2x
-      const journalDataUrl = await toPng(wrapper, { pixelRatio: scale, cacheBust: true });
+      // Wait for every img in the journal to be fully decoded.
+      // On iOS/iPadOS the browser may not have rasterised images yet when
+      // html-to-image takes its DOM snapshot, causing stickers to disappear.
+      await Promise.all(
+        [...wrapper.querySelectorAll('img')].map(img =>
+          img.complete ? img.decode().catch(() => {}) : new Promise<void>(res => {
+            img.onload  = () => img.decode().catch(() => {}).finally(res);
+            img.onerror = () => res();
+          })
+        )
+      );
+
+      // iOS / WebKit fix: html-to-image serialises via SVG foreignObject.
+      // On the first pass resources are loaded into the SVG context but not
+      // yet composited; the second pass captures them correctly.
+      const exportOptions = { pixelRatio: scale, cacheBust: true } as const;
+      await toPng(wrapper, exportOptions).catch(() => {}); // warm-up pass
+      const journalDataUrl = await toPng(wrapper, exportOptions);
 
       fontStyle?.remove();
       noShadowStyle.remove();

@@ -342,37 +342,15 @@
   padding: 0;
 }
 
-/* ── Touch devices: larger tap targets ───────────────── */
+/* ── Touch devices: hide handles, enlarge delete button ─ */
 @media (pointer: coarse) {
-  .rotateHandle {
-    bottom: -22px;
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-  }
-
+  /* Gesture-based interaction replaces handles on touch */
+  .rotateHandle,
   .resizeHandle {
-    width: 44px;
-    height: 44px;
-    background: radial-gradient(circle 6px at center, var(--color-ink-muted) 100%, transparent 100%);
-    border-radius: 0;
+    display: none;
   }
 
-  .resizeHandleBottomRight {
-    bottom: -22px;
-    right: -22px;
-  }
-
-  .resizeHandleBottomLeft {
-    bottom: -22px;
-    left: -22px;
-  }
-
-  .resizeHandleUpperLeft {
-    top: -22px;
-    left: -22px;
-  }
-
+  /* Larger delete button for fingers */
   .deleteBtn {
     top: -22px;
     right: -22px;
