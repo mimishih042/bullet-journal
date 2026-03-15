@@ -1,6 +1,6 @@
 {
-  "name": "StickerDays Journal",
-  "short_name": "StickerDays",
+  "name": "Stickory",
+  "short_name": "Stickory",
   "description": "A personal sticker journal calendar",
   "display": "standalone",
   "start_url": "/",
