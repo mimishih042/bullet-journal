@@ -125,6 +125,7 @@
   height: 100%;
   user-select: none;
   cursor: grab;
+  overflow: hidden;
 }
 
 .stickerPeelHost:active { cursor: grabbing; }
@@ -354,8 +355,8 @@
   .deleteBtn {
     top: -22px;
     right: -22px;
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     font-size: 1rem;
   }
 }

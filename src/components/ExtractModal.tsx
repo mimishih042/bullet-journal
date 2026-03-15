@@ -1,13 +1,34 @@
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './ExtractModal.module.css';
 import ExtractExample from '../assets/extract-example.png'
 
 interface Props {
-  onUpload: () => void;
+  onUpload: (file: File) => void;
   onCancel: () => void;
 }
 
 export default function ExtractModal({ onUpload, onCancel }: Props) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    e.target.value = '';
+  };
+
+  const handleAction = () => {
+    if (selectedFile) {
+      onUpload(selectedFile);
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
   return createPortal(
     <div className={styles.overlay} onClick={onCancel}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
@@ -25,17 +46,35 @@ export default function ExtractModal({ onUpload, onCancel }: Props) {
             <li>Make sure stickers have clear, visible edges</li>
             <li>Good lighting and a straight-on angle give the best results</li>
           </ul>
-          {/* <div className={styles.howToPlaceholder}> */}
-            <img src={ExtractExample} alt='' className={styles.placeholderImg}/>
-          {/* </div> */}
+
+          <button
+            className={styles.imageBtn}
+            onClick={() => fileInputRef.current?.click()}
+            title="Click to upload your sticker sheet"
+          >
+            <img
+              src={previewUrl ?? ExtractExample}
+              alt=""
+              className={previewUrl ? styles.previewImg : styles.placeholderImg}
+            />
+            {!previewUrl && <span className={styles.imageBtnHint}>Click to upload</span>}
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
         </div>
 
         <div className={styles.buttons}>
           <button className={styles.cancelBtn} onClick={onCancel}>
             Cancel
           </button>
-          <button className={styles.uploadBtn} onClick={onUpload}>
-            Upload image
+          <button className={styles.uploadBtn} onClick={handleAction} disabled={!selectedFile}>
+             Done
           </button>
         </div>
 

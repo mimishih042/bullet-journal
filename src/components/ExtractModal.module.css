@@ -64,19 +64,52 @@
   font-weight: 600;
 }
 
+/* ── Image upload button ────────────────────────────────────────────────── */
+.imageBtn {
+  position: relative;
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.imageBtn:hover .imageBtnHint {
+  opacity: 1;
+}
+
+.imageBtnHint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.38);
+  border-radius: var(--radius-md);
+  opacity: 0;
+  transition: opacity var(--duration-base);
+  pointer-events: none;
+}
+
 .placeholderImg {
+  display: block;
   width: 100%;
   border: 1.5px dashed var(--color-border);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
 }
 
-.howToImg {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  border-radius: var(--radius-md);
+.previewImg {
   display: block;
+  width: 100%;
+  border-radius: var(--radius-md);
+  object-fit: contain;
 }
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
@@ -94,7 +127,14 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   text-align: center;
-  transition: background var(--duration-base);
+  transition: background var(--duration-base), color var(--duration-base), border-color var(--duration-base);
+}
+
+.uploadBtn:disabled {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(0, 0, 0, 0.25);
+  border: none;
+  cursor: not-allowed;
 }
 
 .cancelBtn {
@@ -113,6 +153,6 @@
   border: 1px solid var(--color-ink);
 }
 
-.uploadBtn:hover {
+.uploadBtn:hover:not(:disabled) {
   background: var(--color-surface-subtle);
 }

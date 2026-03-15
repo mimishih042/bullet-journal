@@ -97,6 +97,7 @@
 .panelBody {
   margin-bottom: 20px;
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: var(--space-8) 18px var(--space-12);
   display: flex;

@@ -106,7 +106,6 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   const [stickerPack, setStickerPack] = useState<StickerItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stickerInputRef = useRef<HTMLInputElement>(null);
-  const sheetInputRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
   const [showExtractModal, setShowExtractModal] = useState(false);
 
@@ -306,7 +305,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     <>
       {showExtractModal && (
         <ExtractModal
-          onUpload={() => { setShowExtractModal(false); sheetInputRef.current?.click(); }}
+          onUpload={(file) => { setShowExtractModal(false); handleSheetUpload(file); }}
           onCancel={() => setShowExtractModal(false)}
         />
       )}
@@ -440,17 +439,6 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             >
               {extracting ? 'Extracting…' : '✦ Extract stickers from sheet'}
             </button>
-            <input
-              ref={sheetInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={e => {
-                const file = e.target.files?.[0];
-                if (file) handleSheetUpload(file);
-                e.target.value = '';
-              }}
-            />
 
 
             <br/>
