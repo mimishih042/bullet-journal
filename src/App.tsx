@@ -9,7 +9,7 @@ const today = new Date();
 export default function App() {
   const [viewYear,   setViewYear]   = useState(today.getFullYear());
   const [viewMonth,  setViewMonth]  = useState(today.getMonth());
-  const [panelOpen,  setPanelOpen]  = useState(false);
+  const [panelOpen,  setPanelOpen]  = useState(true);
 
   return (
     <div className={styles.pageRoot}>

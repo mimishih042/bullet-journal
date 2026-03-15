@@ -77,6 +77,7 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
     <>
       <div
         className={cellClass}
+        data-today={isToday ? 'true' : undefined}
         onClick={handleCellClick}
         onDragOver={e => { e.preventDefault(); if (!isOtherMonth) setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}

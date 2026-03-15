@@ -131,9 +131,19 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       const tabsEl = document.getElementById('month-tabs');
       if (hideTabs && tabsEl) tabsEl.style.display = 'none';
 
+      // Temporarily suppress box-shadows for a clean export
+      const noShadowStyle = document.createElement('style');
+      noShadowStyle.textContent = [
+        '#journal-wrapper * { box-shadow: none !important; }',
+        '#journal-wrapper [data-today]::after { display: none !important; }',
+        '#journal-wrapper [data-today] span { color: var(--color-ink-tertiary) !important; font-weight: normal !important; }',
+      ].join('\n');
+      document.head.appendChild(noShadowStyle);
+
       // Capture the journal wrapper at 2x
       const journalDataUrl = await toPng(wrapper, { pixelRatio: scale, cacheBust: true });
 
+      noShadowStyle.remove();
       if (hideTabs && tabsEl) tabsEl.style.display = '';
 
       // Measure wrapper and add padding so the calendar sits centred in the
@@ -260,7 +270,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             <br/>
 
             {/* ── Sticker Pack ── */}
-            <p className={styles.sectionLabel}>Sticker Pack</p>
+            <p className={styles.sectionLabel}>Stickers</p>
 
             {stickerPack.length > 0 && (
               <div className={styles.stickerGrid}>
