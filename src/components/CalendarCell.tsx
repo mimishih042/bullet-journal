@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import heic2any from 'heic2any';
 import styles from './CalendarCell.module.css';
 import { savePhoto, loadPhoto, deletePhoto } from '../storage';
 import CropModal from './CropModal';
@@ -26,13 +27,22 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
     return () => { cancelled = true; };
   }, [dateKey]);
 
-  const openCrop = (file: File) => {
-    if (!dateKey || !file.type.startsWith('image/')) return;
+  const openCrop = async (file: File) => {
+    if (!dateKey) return;
+    const isHeic = file.type === 'image/heic' || file.type === 'image/heif'
+      || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+    if (!isHeic && !file.type.startsWith('image/')) return;
+
+    if (inputRef.current) inputRef.current.value = '';
+
+    let source: File | Blob = file;
+    if (isHeic) {
+      source = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 }) as Blob;
+    }
+
     const reader = new FileReader();
     reader.onload = e => setPendingImage(e.target!.result as string);
-    reader.readAsDataURL(file);
-    // Reset input so the same file can be re-selected after cancel
-    if (inputRef.current) inputRef.current.value = '';
+    reader.readAsDataURL(source);
   };
 
   const handleCropConfirm = async (croppedDataURL: string) => {
@@ -118,9 +128,9 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept="image/png,image/jpeg,image/jpg,image/heic,image/heif,.heic,.heif"
             style={{ display: 'none' }}
-            onChange={e => e.target.files?.[0] && openCrop(e.target.files[0])}
+            onChange={e => { if (e.target.files?.[0]) openCrop(e.target.files[0]); }}
           />
         )}
       </div>

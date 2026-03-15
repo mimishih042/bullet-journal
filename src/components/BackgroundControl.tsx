@@ -5,6 +5,7 @@ import type { StickerItem } from '../storage';
 import EditIcon from '../assets/edit.svg'
 import styles from './BackgroundControl.module.css';
 import StickerPeelPreview from './StickerPeelPreview';
+import { extractStickersFromSheet } from '../utils/extractStickers';
 
 /**
  * Fetches the project font from Google Fonts and injects it as a base64
@@ -104,6 +105,8 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   const [stickerPack, setStickerPack] = useState<StickerItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stickerInputRef = useRef<HTMLInputElement>(null);
+  const sheetInputRef = useRef<HTMLInputElement>(null);
+  const [extracting, setExtracting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -159,6 +162,23 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   const handleDeleteSticker = async (id: string) => {
     await deleteStickerItem(id);
     setStickerPack(prev => prev.filter(s => s.id !== id));
+  };
+
+  const handleSheetUpload = async (file: File) => {
+    setExtracting(true);
+    // Yield to let React render the loading state before blocking canvas work
+    await new Promise(r => setTimeout(r, 0));
+    try {
+      const results = await extractStickersFromSheet(file);
+      for (const dataURL of results) {
+        const id = crypto.randomUUID();
+        const item: StickerItem = { id, dataURL };
+        await saveStickerItem(item);
+        setStickerPack(prev => [...prev, item]);
+      }
+    } finally {
+      setExtracting(false);
+    }
   };
 
   const [printMode, setPrintMode] = useState<'with-tabs' | 'no-tabs'>('with-tabs');
@@ -386,6 +406,27 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                 e.target.value = '';
               }}
             />
+
+            {/* ── Sticker sheet extractor ── */}
+            <button
+              className={styles.actionBtn}
+              onClick={() => sheetInputRef.current?.click()}
+              disabled={extracting}
+            >
+              {extracting ? 'Extracting…' : '✦ Extract from sticker sheet'}
+            </button>
+            <input
+              ref={sheetInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handleSheetUpload(file);
+                e.target.value = '';
+              }}
+            />
+
 
             <br/>
 
