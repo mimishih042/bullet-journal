@@ -378,12 +378,12 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               ref={stickerInputRef}
               type="file"
               accept="image/png,image/jpeg"
+              multiple
               style={{ display: 'none' }}
               onChange={e => {
-                if (e.target.files?.[0]) {
-                  handleStickerUpload(e.target.files[0]);
-                  e.target.value = '';
-                }
+                const files = Array.from(e.target.files ?? []);
+                files.forEach(f => handleStickerUpload(f));
+                e.target.value = '';
               }}
             />
 
