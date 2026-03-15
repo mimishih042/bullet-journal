@@ -95,6 +95,7 @@
 
 /* ── Panel body ────────────────────────────────────────────────────────── */
 .panelBody {
+  margin-bottom: 20px;
   flex: 1;
   overflow-y: auto;
   padding: var(--space-8) 18px var(--space-12);
@@ -224,6 +225,10 @@
   text-align: left;
   font-style: italic;
   line-height: 1.6;
+}
+
+.addStickerPackBtn {
+  margin-top: 0px;
 }
 
 /* ── Sheet extractor preview ───────────────────────────────────────────── */

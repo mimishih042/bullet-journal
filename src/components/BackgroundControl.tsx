@@ -5,6 +5,7 @@ import type { StickerItem } from '../storage';
 import EditIcon from '../assets/edit.svg'
 import styles from './BackgroundControl.module.css';
 import StickerPeelPreview from './StickerPeelPreview';
+import ExtractModal from './ExtractModal';
 import { extractStickersFromSheet } from '../utils/extractStickers';
 
 /**
@@ -101,12 +102,13 @@ interface Props {
 }
 
 export default function BackgroundControl({ open, onToggle, year, month }: Props) {
-  const [bgColor, setBgColor] = useState('#1a1612');
+  const [bgColor, setBgColor] = useState('#ece7df');
   const [stickerPack, setStickerPack] = useState<StickerItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stickerInputRef = useRef<HTMLInputElement>(null);
   const sheetInputRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
+  const [showExtractModal, setShowExtractModal] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -302,6 +304,13 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
   return (
     <>
+      {showExtractModal && (
+        <ExtractModal
+          onUpload={() => { setShowExtractModal(false); sheetInputRef.current?.click(); }}
+          onCancel={() => setShowExtractModal(false)}
+        />
+      )}
+
       {/* Toggle button — always fixed top-right */}
       <button
         className={`${styles.bgBtn} ${open ? styles.bgBtnActive : ''}`}
@@ -408,7 +417,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               className={styles.actionBtn}
               onClick={() => stickerInputRef.current?.click()}
             >
-              + Add sticker
+              + Add stickers
             </button>
             <input
               ref={stickerInputRef}
@@ -425,11 +434,11 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
             {/* ── Sticker sheet extractor ── */}
             <button
-              className={styles.actionBtn}
-              onClick={() => sheetInputRef.current?.click()}
+              className={`${styles.actionBtn} ${styles.addStickerPackBtn}`}
+              onClick={() => setShowExtractModal(true)}
               disabled={extracting}
             >
-              {extracting ? 'Extracting…' : '✦ Extract from sticker sheet'}
+              {extracting ? 'Extracting…' : '✦ Extract stickers from photo'}
             </button>
             <input
               ref={sheetInputRef}

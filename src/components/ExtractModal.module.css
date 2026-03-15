@@ -1,0 +1,122 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-top);
+}
+
+.modal {
+  background-color: var(--color-surface-paper);
+  background-image: var(--bg-grid);
+  background-size: var(--bg-grid-size);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  width: 400px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.title {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  color: var(--color-ink-secondary);
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.05em;
+  padding-bottom: var(--space-5);
+  border-bottom: 1px dashed;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.description {
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--color-ink);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.tips {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-ink-tertiary);
+  line-height: 1.7;
+  padding-left: var(--space-6);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tips strong {
+  color: var(--color-ink-secondary);
+  font-weight: 600;
+}
+
+/* ── How-to image placeholder ─────────────────────────────────────────── */
+/* Replace contents with an <img> when the image is ready.               */
+.howToPlaceholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* When you add a real image, use this class on the <img> element */
+.howToImg {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  display: block;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.buttons {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: flex-end;
+}
+
+.cancelBtn,
+.uploadBtn {
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  padding: 7px var(--space-6);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: center;
+  transition: background var(--duration-base);
+}
+
+.cancelBtn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-ink);
+  border: none;
+}
+
+.cancelBtn:hover {
+  background: var(--color-surface-subtle);
+}
+
+.uploadBtn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-ink);
+  border: 1px solid var(--color-ink);
+}
+
+.uploadBtn:hover {
+  background: var(--color-surface-subtle);
+}
