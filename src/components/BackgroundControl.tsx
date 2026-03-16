@@ -221,12 +221,40 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
         )
       );
 
+      // iOS fix: html-to-image embeds data URL images as-is inside the SVG
+      // foreignObject. With many large HEIC-converted photos (each up to 1200×1200
+      // JPEG) the SVG string becomes too large for Safari to render, silently
+      // dropping the images. Solution: temporarily downscale each photo to the
+      // pixel size it actually occupies in the export, run toPng(), then restore.
+      const imgRestorations: { img: HTMLImageElement; orig: string }[] = [];
+      await Promise.all(
+        ([...wrapper.querySelectorAll('img')] as HTMLImageElement[]).map(async img => {
+          if (!img.src.startsWith('data:image/')) return;
+          const displayW = Math.ceil(img.offsetWidth  * scale);
+          const displayH = Math.ceil(img.offsetHeight * scale);
+          if (!displayW || !displayH) return;
+          // Only downscale if image is larger than its display footprint
+          if (img.naturalWidth <= displayW && img.naturalHeight <= displayH) return;
+          const cnv = document.createElement('canvas');
+          cnv.width  = displayW;
+          cnv.height = displayH;
+          cnv.getContext('2d')!.drawImage(img, 0, 0, displayW, displayH);
+          const smallUrl = cnv.toDataURL('image/jpeg', 0.92);
+          imgRestorations.push({ img, orig: img.src });
+          img.src = smallUrl;
+          await img.decode().catch(() => {});
+        })
+      );
+
       // iOS / WebKit fix: html-to-image serialises via SVG foreignObject.
       // On the first pass resources are loaded into the SVG context but not
       // yet composited; the second pass captures them correctly.
       const exportOptions = { pixelRatio: scale, cacheBust: true } as const;
       await toPng(wrapper, exportOptions).catch(() => {}); // warm-up pass
       const journalDataUrl = await toPng(wrapper, exportOptions);
+
+      // Restore original high-res sources after capture
+      for (const { img, orig } of imgRestorations) img.src = orig;
 
       fontStyle?.remove();
       noShadowStyle.remove();
