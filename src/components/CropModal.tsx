@@ -69,7 +69,7 @@ async function getCroppedImg(
 ): Promise<string> {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
+    img.onload = () => img.decode().then(() => resolve(img)).catch(() => resolve(img));
     img.onerror = reject;
     img.src = imageSrc;
   });
