@@ -238,8 +238,16 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
           const cnv = document.createElement('canvas');
           cnv.width  = displayW;
           cnv.height = displayH;
-          cnv.getContext('2d')!.drawImage(img, 0, 0, displayW, displayH);
-          const smallUrl = cnv.toDataURL('image/jpeg', 0.92);
+          const ctx2d = cnv.getContext('2d')!;
+          // Fill with the cell's computed background colour first so that if
+          // drawImage fails to render (HEIC on iOS), empty pixels stay the cell
+          // colour rather than becoming black when converted to an opaque format.
+          ctx2d.fillStyle = getComputedStyle(img.parentElement ?? img).backgroundColor || '#ece7df';
+          ctx2d.fillRect(0, 0, displayW, displayH);
+          ctx2d.drawImage(img, 0, 0, displayW, displayH);
+          // Use PNG so any remaining transparent pixels stay transparent instead
+          // of being collapsed to black by JPEG's lack of alpha channel.
+          const smallUrl = cnv.toDataURL('image/png');
           imgRestorations.push({ img, orig: img.src });
           img.src = smallUrl;
           await img.decode().catch(() => {});
