@@ -153,7 +153,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       const dataURL = e.target!.result as string;
       const trimmed = await trimTransparent(dataURL);
       const id = crypto.randomUUID();
-      const item: StickerItem = { id, dataURL: trimmed };
+      const item: StickerItem = { id, dataURL: trimmed, order: stickerPack.length };
       await saveStickerItem(item);
       setStickerPack(prev => [...prev, item]);
     };
@@ -165,15 +165,59 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     setStickerPack(prev => prev.filter(s => s.id !== id));
   };
 
+  // ── Edit / reorder mode ───────────────────────────────────────────────────
+  const [isEditingStickers, setIsEditingStickers] = useState(false);
+  const [draggingId,        setDraggingId]        = useState<string | null>(null);
+  const dragIndexRef = useRef<number | null>(null);
+
+  const handleReorderDragStart = (e: React.DragEvent, index: number, id: string) => {
+    dragIndexRef.current = index;
+    setDraggingId(id);
+    // Invisible drag image so the ghost doesn't fight with the live grid
+    const ghost = document.createElement('div');
+    ghost.style.cssText = 'position:fixed;top:-200px;left:-200px;width:1px;height:1px;';
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 0, 0);
+    requestAnimationFrame(() => document.body.removeChild(ghost));
+  };
+
+  const handleReorderDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    const from = dragIndexRef.current;
+    if (from === null || from === index) return;
+    setStickerPack(prev => {
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      next.splice(index, 0, item);
+      return next;
+    });
+    dragIndexRef.current = index;
+  };
+
+  const handleReorderDragEnd = () => {
+    dragIndexRef.current = null;
+    setDraggingId(null);
+  };
+
+  const handleEditDone = async () => {
+    setIsEditingStickers(false);
+    setDraggingId(null);
+    // Persist new order: assign sequential order values matching the array index
+    const updated = stickerPack.map((s, i) => ({ ...s, order: i }));
+    setStickerPack(updated);
+    for (const item of updated) await saveStickerItem(item);
+  };
+
   const handleSheetUpload = async (file: File) => {
     setExtracting(true);
     // Yield to let React render the loading state before blocking canvas work
     await new Promise(r => setTimeout(r, 0));
     try {
       const results = await extractStickersFromSheet(file);
+      let orderBase = stickerPack.length;
       for (const dataURL of results) {
         const id = crypto.randomUUID();
-        const item: StickerItem = { id, dataURL };
+        const item: StickerItem = { id, dataURL, order: orderBase++ };
         await saveStickerItem(item);
         setStickerPack(prev => [...prev, item]);
       }
@@ -401,39 +445,65 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             <br/>
 
             {/* ── Sticker Pack ── */}
-            <p className={styles.sectionLabel}>Stickers</p>
+            <div className={styles.stickerSectionHeader}>
+              <p className={styles.sectionLabel}>Stickers</p>
+              {stickerPack.length > 0 && (
+                <button
+                  className={styles.editStickersBtn}
+                  onClick={isEditingStickers ? handleEditDone : () => setIsEditingStickers(true)}
+                >
+                  {isEditingStickers ? 'Done' : 'Edit'}
+                </button>
+              )}
+            </div>
 
             {stickerPack.length > 0 && (
-              <div className={styles.stickerGrid}>
-                {stickerPack.map(sticker => (
+              <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
+                {stickerPack.map((sticker, index) => (
                   <div
                     key={sticker.id}
-                    className={styles.stickerThumbWrap}
+                    className={[
+                      styles.stickerThumbWrap,
+                      isEditingStickers ? styles.stickerThumbEditing : '',
+                      draggingId === sticker.id ? styles.stickerThumbDragging : '',
+                    ].join(' ')}
                     draggable
                     onDragStart={e => {
-                      e.dataTransfer.setData(
-                        'sticker-data',
-                        JSON.stringify({ id: sticker.id, dataURL: sticker.dataURL })
-                      );
-                      e.dataTransfer.effectAllowed = 'copy';
-
-                      // Use a plain img as drag ghost so the preview shows only
-                      // the sticker, not the surrounding peel container.
-                      const ghost = document.createElement('img');
-                      ghost.src = sticker.dataURL;
-                      ghost.width = 80;
-                      ghost.height = 80;
-                      ghost.style.cssText =
-                        'position:fixed;top:-200px;left:-200px;object-fit:contain;pointer-events:none;';
-                      document.body.appendChild(ghost);
-                      e.dataTransfer.setDragImage(ghost, 40, 40);
-                      requestAnimationFrame(() => document.body.removeChild(ghost));
+                      if (isEditingStickers) {
+                        handleReorderDragStart(e, index, sticker.id);
+                      } else {
+                        e.dataTransfer.setData(
+                          'sticker-data',
+                          JSON.stringify({ id: sticker.id, dataURL: sticker.dataURL })
+                        );
+                        e.dataTransfer.effectAllowed = 'copy';
+                        const ghost = document.createElement('img');
+                        ghost.src = sticker.dataURL;
+                        ghost.width = 80;
+                        ghost.height = 80;
+                        ghost.style.cssText =
+                          'position:fixed;top:-200px;left:-200px;object-fit:contain;pointer-events:none;';
+                        document.body.appendChild(ghost);
+                        e.dataTransfer.setDragImage(ghost, 40, 40);
+                        requestAnimationFrame(() => document.body.removeChild(ghost));
+                      }
                     }}
-                    title="Drag to place on calendar"
+                    onDragOver={isEditingStickers ? e => handleReorderDragOver(e, index) : undefined}
+                    onDragEnd={isEditingStickers ? handleReorderDragEnd : undefined}
+                    title={isEditingStickers ? 'Drag to reorder' : 'Drag to place on calendar'}
                   >
-                    <StickerPeelPreview src={sticker.dataURL} filterId={sticker.id} />
+                    {isEditingStickers ? (
+                      <img
+                        src={sticker.dataURL}
+                        draggable={false}
+                        className={styles.stickerThumbImg}
+                        alt=""
+                      />
+                    ) : (
+                      <StickerPeelPreview src={sticker.dataURL} filterId={sticker.id} />
+                    )}
                     <button
-                      className={styles.stickerThumbDelete}
+                      className={`${styles.stickerThumbDelete} ${isEditingStickers ? styles.stickerThumbDeleteVisible : ''}`}
                       onClick={() => handleDeleteSticker(sticker.id)}
                       title="Remove from pack"
                     >

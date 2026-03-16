@@ -68,10 +68,10 @@ export default function App() {
         </div>
 
         <footer className={styles.footer} data-print-hidden>
+          <div className={styles.footerCopy}>© 2026 Mimi Shih</div>
           <a href="https://instagram.com/mimishih_design" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>
             ✦ Follow my art on Instagram
           </a>
-          <span className={styles.footerCopy}>© 2026 Mimi Shih</span>
         </footer>
       </div>
 

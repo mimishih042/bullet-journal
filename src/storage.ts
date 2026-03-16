@@ -82,6 +82,7 @@ export async function loadSetting(key: string): Promise<string | null> {
 export interface StickerItem {
   id: string;
   dataURL: string;
+  order?: number;
 }
 
 export async function saveStickerItem(item: StickerItem): Promise<void> {
@@ -91,7 +92,8 @@ export async function saveStickerItem(item: StickerItem): Promise<void> {
 
 export async function loadAllStickers(): Promise<StickerItem[]> {
   const db = await dbPromise;
-  return db.getAll('stickers');
+  const items = await db.getAll('stickers');
+  return items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 export async function deleteStickerItem(id: string): Promise<void> {
