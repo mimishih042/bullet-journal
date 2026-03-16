@@ -66,6 +66,13 @@ export default function App() {
             onNextYear={() => setViewYear(y => y + 1)}
           />
         </div>
+
+        <footer className={styles.footer} data-print-hidden>
+          <a href="https://instagram.com/mimishih_design" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>
+            ✦ Follow my art on Instagram
+          </a>
+          <span className={styles.footerCopy}>© 2026 Mimi Shih</span>
+        </footer>
       </div>
 
       <BackgroundControl

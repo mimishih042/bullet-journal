@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import heic2any from 'heic2any';
+import { heicTo, isHeic } from 'heic-to';
 import styles from './CalendarCell.module.css';
 import { savePhoto, loadPhoto, deletePhoto } from '../storage';
 import CropModal from './CropModal';
@@ -14,6 +14,7 @@ interface Props {
 export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Props) {
   const [photoURL,   setPhotoURL]   = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  // null = closed, 'loading' = open + converting, string = open + ready
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,20 +30,30 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
 
   const openCrop = async (file: File) => {
     if (!dateKey) return;
-    const isHeic = file.type === 'image/heic' || file.type === 'image/heif'
+
+    // isHeic reads magic bytes — reliable even when MIME type is empty (Safari/iOS)
+    const heicFile = await isHeic(file).catch(() => false)
+      || file.type === 'image/heic' || file.type === 'image/heif'
       || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
-    if (!isHeic && !file.type.startsWith('image/')) return;
+
+    if (!heicFile && !file.type.startsWith('image/')) return;
 
     if (inputRef.current) inputRef.current.value = '';
 
-    let source: File | Blob = file;
-    if (isHeic) {
-      source = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 }) as Blob;
+    if (heicFile) {
+      // Open the modal immediately with a loading state, then fill in the image
+      setPendingImage('loading');
+      try {
+        const blob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.92 });
+        setPendingImage(URL.createObjectURL(blob));
+      } catch {
+        // heic-to failed — file may already be JPEG (OS pre-converted); try native
+        setPendingImage(URL.createObjectURL(file));
+      }
+      return;
     }
 
-    const reader = new FileReader();
-    reader.onload = e => setPendingImage(e.target!.result as string);
-    reader.readAsDataURL(source);
+    setPendingImage(URL.createObjectURL(file));
   };
 
   const handleCropConfirm = async (croppedDataURL: string) => {
@@ -137,7 +148,7 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
 
       {pendingImage && (
         <CropModal
-          imageSrc={pendingImage}
+          imageSrc={pendingImage === 'loading' ? null : pendingImage}
           onConfirm={handleCropConfirm}
           onCancel={handleCropCancel}
         />

@@ -152,7 +152,7 @@ function StampOverlay() {
 
 // ── Component ──────────────────────────────────────────────────────────────
 interface Props {
-  imageSrc: string;
+  imageSrc: string | null;
   onConfirm: (croppedDataURL: string) => void;
   onCancel: () => void;
 }
@@ -190,7 +190,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
   }, []);
 
   const handleConfirm = async () => {
-    if (!croppedAreaPixels) return;
+    if (!croppedAreaPixels || !imageSrc) return;
     const result = await getCroppedImg(imageSrc, croppedAreaPixels, shape);
     onConfirm(result);
   };
@@ -216,25 +216,30 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
 
         {/* Cropper */}
         <div className={styles.cropArea} ref={cropAreaRef}>
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            aspect={1}
-            cropShape={shape === 'round' ? 'round' : 'rect'}
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onCropComplete={onCropComplete}
-            showGrid={false}
-            classes={shape === 'stamp' ? { cropAreaClassName: styles.stampCropArea } : undefined}
-            cropSize={
-              containerSize > 0
-                ? { width: containerSize, height: containerSize }
-                : undefined
-            }
-          />
-          {/* Custom overlay for stamp shape */}
-          {shape === 'stamp' && <StampOverlay />}
+          {imageSrc ? (
+            <>
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape={shape === 'round' ? 'round' : 'rect'}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                showGrid={false}
+                classes={shape === 'stamp' ? { cropAreaClassName: styles.stampCropArea } : undefined}
+                cropSize={
+                  containerSize > 0
+                    ? { width: containerSize, height: containerSize }
+                    : undefined
+                }
+              />
+              {shape === 'stamp' && <StampOverlay />}
+            </>
+          ) : (
+            <div className={styles.loadingSpinner} />
+          )}
         </div>
 
         {/* Controls */}
@@ -254,7 +259,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
 
           <div className={styles.buttons}>
             <button className={styles.cancelBtn} onClick={onCancel}>Cancel</button>
-            <button className={styles.confirmBtn} onClick={handleConfirm}>Apply</button>
+            <button className={styles.confirmBtn} onClick={handleConfirm} disabled={!imageSrc}>Apply</button>
           </div>
         </div>
       </div>

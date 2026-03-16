@@ -40,6 +40,35 @@
   padding: var(--space-16) var(--space-8);
 }
 
+/* ── Footer — fixed bottom-left, outside layout flow ─── */
+.footer {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  z-index: var(--z-panel-btn);
+}
+
+.footerLink {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-ink-tertiary);
+  text-decoration: none;
+  transition: color var(--duration-base);
+}
+
+.footerLink:hover {
+  color: var(--color-ink-secondary);
+}
+
+.footerCopy {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-ink-tertiary);
+}
+
 /* ── Journal wrapper — constrained width ─────────────── */
 .journalWrapper {
   display: flex;
