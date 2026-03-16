@@ -74,7 +74,10 @@ async function getCroppedImg(
     img.src = imageSrc;
   });
 
-  const size = pixelCrop.width; // always square (aspect=1)
+  // Cap output at 1200 px — high-res HEIC crops can exceed iOS canvas memory limits,
+  // causing toDataURL() to return an empty/broken string on iPad.
+  const MAX_SIZE = 1200;
+  const size = Math.min(pixelCrop.width, MAX_SIZE);
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;

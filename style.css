@@ -3,6 +3,7 @@
 
 html {
   overflow-x: hidden; /* prevent horizontal scroll revealing the side panel */
+  touch-action: pan-x pan-y; /* block browser pinch-zoom at CSS level without breaking react-easy-crop */
 }
 
 body {

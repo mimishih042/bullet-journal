@@ -272,7 +272,9 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
           img.src = bgValue;
         });
       } else {
-        ctx.fillStyle = bgValue || '#1a1612';
+        // Fall back to whatever color is currently rendered on the page body
+        const renderedBg = bgValue || getComputedStyle(document.body).backgroundColor;
+        ctx.fillStyle = renderedBg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 

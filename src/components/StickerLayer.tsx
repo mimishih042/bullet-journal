@@ -87,13 +87,16 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
     if (!el) return;
 
     // ── Helpers ──────────────────────────────────────────
-    const makeDrag = (t: Touch): DragState => ({
-      kind:      'drag',
-      startX:    t.clientX,
-      startY:    t.clientY,
-      startTime: Date.now(),
-      initPos:   { ...posRef.current },
-    });
+    const makeDrag = (t: Touch): DragState => {
+      setIsAdjusting(true);
+      return {
+        kind:      'drag',
+        startX:    t.clientX,
+        startY:    t.clientY,
+        startTime: Date.now(),
+        initPos:   { ...posRef.current },
+      };
+    };
 
     const makePinch = (t1: Touch, t2: Touch): PinchState => {
       setIsAdjusting(true);
@@ -184,6 +187,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
         if (e.touches.length === 0) {
           // All fingers lifted
           if (s?.kind === 'drag') {
+            setIsAdjusting(false);
             const ct = e.changedTouches[0];
             const dx = ct.clientX - s.startX;
             const dy = ct.clientY - s.startY;

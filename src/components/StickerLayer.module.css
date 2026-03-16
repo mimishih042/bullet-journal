@@ -224,8 +224,9 @@
   top: calc(-100% + 2 * var(--peel-active-pct) - 1px);
 }
 
-/* ── Suppress peel while rotating / resizing ─────────── */
-.stickerWrap.isActive:hover .stickerMain {
+/* ── Suppress peel while dragging / rotating / resizing ─ */
+.stickerWrap.isActive:hover .stickerMain,
+.stickerWrap.isActive:active .stickerMain {
   clip-path: polygon(
     var(--peel-start) var(--peel-start),
     var(--peel-end)   var(--peel-start),
@@ -234,7 +235,8 @@
   );
 }
 
-.stickerWrap.isActive:hover .stickerFlap {
+.stickerWrap.isActive:hover .stickerFlap,
+.stickerWrap.isActive:active .stickerFlap {
   clip-path: polygon(
     var(--peel-start) var(--peel-start),
     var(--peel-end)   var(--peel-start),
