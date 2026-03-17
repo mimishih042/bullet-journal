@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useLayoutEffect } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
@@ -121,9 +121,16 @@ function CircleIcon() {
 }
 
 function StampIcon() {
+  // Clean stamp silhouette: 24×24 grid, 2 perforations per side (r=2)
+  // All edges use sweep=0 so every arc bites inward (perforation into the shape)
+  const d =
+    'M 2 2 L 6 2 A 2 2 0 0 0 10 2 L 14 2 A 2 2 0 0 0 18 2 L 22 2 ' +
+    'L 22 6 A 2 2 0 0 0 22 10 L 22 14 A 2 2 0 0 0 22 18 L 22 22 ' +
+    'L 18 22 A 2 2 0 0 0 14 22 L 10 22 A 2 2 0 0 0 6 22 L 2 22 ' +
+    'L 2 18 A 2 2 0 0 0 2 14 L 2 10 A 2 2 0 0 0 2 6 Z';
   return (
-    <svg viewBox="0 0 304 318" width="22" height="22" fill="currentColor">
-      <polygon points={STAMP_POINTS_STR} />
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+      <path d={d} />
     </svg>
   );
 }
@@ -161,15 +168,15 @@ interface Props {
 }
 
 const SHAPE_OPTIONS: { value: Shape; label: string; icon: React.ReactNode }[] = [
+  { value: 'stamp',  label: 'Stamp',  icon: <StampIcon /> },
   { value: 'square', label: 'Square', icon: <SquareIcon /> },
   { value: 'round',  label: 'Circle', icon: <CircleIcon /> },
-  { value: 'stamp',  label: 'Stamp',  icon: <StampIcon /> },
 ];
 
 export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
   const [crop, setCrop]   = useState({ x: 0, y: 0 });
   const [zoom, setZoom]   = useState(1);
-  const [shape, setShape] = useState<Shape>('square');
+  const [shape, setShape] = useState<Shape>('stamp');
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   // Measure the crop container so we can pass its exact CSS-pixel size to
@@ -187,6 +194,14 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
     ro.observe(cropAreaRef.current);
     return () => ro.disconnect();
   }, []);
+
+  // Re-center image whenever a new src loads
+  useEffect(() => {
+    if (imageSrc) {
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+    }
+  }, [imageSrc]);
 
   const onCropComplete = useCallback((_: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels);
