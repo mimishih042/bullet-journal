@@ -180,7 +180,8 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   // ── Edit / reorder mode ───────────────────────────────────────────────────
   const [isEditingStickers, setIsEditingStickers] = useState(false);
   const [draggingId,        setDraggingId]        = useState<string | null>(null);
-  const dragIndexRef = useRef<number | null>(null);
+  const dragIndexRef        = useRef<number | null>(null);
+  const touchDragActiveRef  = useRef(false);
 
   const handleReorderDragStart = (e: React.DragEvent, index: number, id: string) => {
     dragIndexRef.current = index;
@@ -210,6 +211,44 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     dragIndexRef.current = null;
     setDraggingId(null);
   };
+
+  // Touch-based reorder: global listeners so touchmove can be non-passive
+  useEffect(() => {
+    const onTouchMove = (e: TouchEvent) => {
+      if (!touchDragActiveRef.current || dragIndexRef.current === null) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      let target: Element | null = document.elementFromPoint(touch.clientX, touch.clientY);
+      while (target && !target.hasAttribute('data-reorder-index')) {
+        target = target.parentElement;
+      }
+      if (!target) return;
+      const toIndex = parseInt(target.getAttribute('data-reorder-index')!, 10);
+      const from = dragIndexRef.current;
+      if (isNaN(toIndex) || from === toIndex) return;
+      setStickerPack(prev => {
+        const next = [...prev];
+        const [item] = next.splice(from, 1);
+        next.splice(toIndex, 0, item);
+        return next;
+      });
+      dragIndexRef.current = toIndex;
+    };
+    const onTouchEnd = () => {
+      if (!touchDragActiveRef.current) return;
+      touchDragActiveRef.current = false;
+      dragIndexRef.current = null;
+      setDraggingId(null);
+    };
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd);
+    document.addEventListener('touchcancel', onTouchEnd);
+    return () => {
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+      document.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, []);
 
   const handleEditDone = async () => {
     setIsEditingStickers(false);
@@ -472,7 +511,6 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             {/* ── Favorites grid ── */}
             {favorites.length > 0 && (
               <>
-                <p className={styles.favoritesLabel}>Favorites</p>
                 <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
                   {favorites.map(sticker => (
                     <div
@@ -530,6 +568,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                 {stickerPack.map((sticker, index) => sticker.isFavorite ? null : (
                   <div
                     key={sticker.id}
+                    data-reorder-index={index}
                     className={[
                       styles.stickerThumbWrap,
                       isEditingStickers ? styles.stickerThumbEditing : '',
@@ -561,12 +600,26 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                     title={isEditingStickers ? 'Drag to reorder' : 'Drag to place on calendar'}
                   >
                     {isEditingStickers ? (
-                      <img
-                        src={sticker.dataURL}
-                        draggable={false}
-                        className={styles.stickerThumbImg}
-                        alt=""
-                      />
+                      <>
+                        <img
+                          src={sticker.dataURL}
+                          draggable={false}
+                          className={styles.stickerThumbImg}
+                          alt=""
+                        />
+                        <button
+                          className={styles.dragHandle}
+                          onTouchStart={e => {
+                            e.stopPropagation();
+                            dragIndexRef.current = index;
+                            setDraggingId(sticker.id);
+                            touchDragActiveRef.current = true;
+                          }}
+                          title="Drag to reorder"
+                        >
+                          ⠿
+                        </button>
+                      </>
                     ) : (
                       <StickerPeelPreview src={sticker.dataURL} filterId={sticker.id} />
                     )}
