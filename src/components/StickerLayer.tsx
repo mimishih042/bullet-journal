@@ -2,6 +2,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import styles from './StickerLayer.module.css';
 import type { PlacedSticker } from '../storage';
 
+// Module-level mutex: only one sticker may own a touch gesture at a time.
+// Prevents two nearby/overlapping stickers from both responding to the same gesture.
+let activeTouchEl: Element | null = null;
+
 interface PlacedStickerItemProps {
   sticker: PlacedSticker;
   cardWidth: number;
@@ -76,7 +80,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
   //   'drag'  — one finger: translate the sticker
   //   'pinch' — two fingers: scale + rotate + translate (midpoint tracking)
   //
-  type DragState  = { kind: 'drag';  startX: number; startY: number; startTime: number; initPos: { x: number; y: number } };
+  type DragState  = { kind: 'drag';  touchId: number; startX: number; startY: number; startTime: number; initPos: { x: number; y: number } };
   type PinchState = { kind: 'pinch'; initDist: number; initAngle: number; initW: number; initH: number; initRot: number; initMid: { x: number; y: number }; initPos: { x: number; y: number } };
   type GestureState = DragState | PinchState;
 
@@ -91,6 +95,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
       setIsAdjusting(true);
       return {
         kind:      'drag',
+        touchId:   t.identifier,
         startX:    t.clientX,
         startY:    t.clientY,
         startTime: Date.now(),
@@ -153,6 +158,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
       if (docEnd)    document.removeEventListener('touchend',    docEnd);
       if (docCancel) document.removeEventListener('touchcancel', docCancel);
       docMove = docEnd = docCancel = null;
+      if (activeTouchEl === el) activeTouchEl = null;
     };
 
     const attach = () => {
@@ -171,8 +177,10 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
           }
           applyPinch(s, e.touches[0], e.touches[1]);
 
-        } else if (e.touches.length === 1 && s.kind === 'drag') {
-          const t  = e.touches[0];
+        } else if (s.kind === 'drag') {
+          // Find the specific finger that started this drag (ignore other active touches)
+          const t = Array.from(e.touches).find(t => t.identifier === s.touchId);
+          if (!t) return;
           const cw = cardWidthRef.current;
           const ch = cardHeightRef.current;
           const newX = Math.max(0, Math.min(cw - stickerWRef.current,  s.initPos.x + t.clientX - s.startX));
@@ -228,9 +236,12 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
     const onTouchStart = (e: TouchEvent) => {
       // Don't handle if the touch started on the delete button
       if ((e.target as HTMLElement).closest('button')) return;
+      // Reject if another sticker already owns the gesture
+      if (activeTouchEl !== null && activeTouchEl !== el) return;
 
       e.stopPropagation();
       e.preventDefault();   // prevents iOS page-zoom during pinch
+      activeTouchEl = el;   // acquire the gesture lock
 
       if (e.touches.length === 1) {
         gestureRef.current = makeDrag(e.touches[0]);
