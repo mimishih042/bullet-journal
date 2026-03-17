@@ -182,6 +182,8 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   const [draggingId,        setDraggingId]        = useState<string | null>(null);
   const dragIndexRef        = useRef<number | null>(null);
   const touchDragActiveRef  = useRef(false);
+  const longPressTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartPosRef    = useRef<{ x: number; y: number } | null>(null);
 
   const handleReorderDragStart = (e: React.DragEvent, index: number, id: string) => {
     dragIndexRef.current = index;
@@ -597,29 +599,40 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                     }}
                     onDragOver={isEditingStickers ? e => handleReorderDragOver(e, index) : undefined}
                     onDragEnd={isEditingStickers ? handleReorderDragEnd : undefined}
-                    title={isEditingStickers ? 'Drag to reorder' : 'Drag to place on calendar'}
+                    onTouchStart={isEditingStickers ? e => {
+                      const touch = e.touches[0];
+                      touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+                      longPressTimerRef.current = setTimeout(() => {
+                        longPressTimerRef.current = null;
+                        dragIndexRef.current = index;
+                        setDraggingId(sticker.id);
+                        touchDragActiveRef.current = true;
+                      }, 350);
+                    } : undefined}
+                    onTouchMove={isEditingStickers ? e => {
+                      if (!longPressTimerRef.current) return;
+                      const touch = e.touches[0];
+                      const start = touchStartPosRef.current!;
+                      if (Math.abs(touch.clientX - start.x) > 8 || Math.abs(touch.clientY - start.y) > 8) {
+                        clearTimeout(longPressTimerRef.current);
+                        longPressTimerRef.current = null;
+                      }
+                    } : undefined}
+                    onTouchEnd={isEditingStickers ? () => {
+                      if (longPressTimerRef.current) {
+                        clearTimeout(longPressTimerRef.current);
+                        longPressTimerRef.current = null;
+                      }
+                    } : undefined}
+                    title={isEditingStickers ? 'Hold to reorder' : 'Drag to place on calendar'}
                   >
                     {isEditingStickers ? (
-                      <>
-                        <img
-                          src={sticker.dataURL}
-                          draggable={false}
-                          className={styles.stickerThumbImg}
-                          alt=""
-                        />
-                        <button
-                          className={styles.dragHandle}
-                          onTouchStart={e => {
-                            e.stopPropagation();
-                            dragIndexRef.current = index;
-                            setDraggingId(sticker.id);
-                            touchDragActiveRef.current = true;
-                          }}
-                          title="Drag to reorder"
-                        >
-                          ⠿
-                        </button>
-                      </>
+                      <img
+                        src={sticker.dataURL}
+                        draggable={false}
+                        className={styles.stickerThumbImg}
+                        alt=""
+                      />
                     ) : (
                       <StickerPeelPreview src={sticker.dataURL} filterId={sticker.id} />
                     )}
