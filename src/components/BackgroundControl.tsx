@@ -6,6 +6,7 @@ import EditIcon from '../assets/edit.svg'
 import styles from './BackgroundControl.module.css';
 import StickerPeelPreview from './StickerPeelPreview';
 import ExtractModal from './ExtractModal';
+import FeedbackPrompt from './FeedbackPrompt';
 import { extractStickersFromSheet } from '../utils/extractStickers';
 
 /**
@@ -634,6 +635,11 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             >
               {exporting ? 'Saving…' : 'Save as PNG'}
             </button>
+
+            <br/>
+
+            {/* ── Feedback ── */}
+            <FeedbackPrompt context="customization-panel" />
 
           </div>
         </div>
