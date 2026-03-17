@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import BackgroundControl from './components/BackgroundControl';
 import MonthTabs from './components/MonthTabs';
 import CalendarCard from './components/CalendarCard';
+import { loadPhoto } from './storage';
 import styles from './App.module.css';
 
 const today = new Date();
+const todayKey = today.toISOString().split('T')[0];
+const nudgeSeenKey = `nudge-seen-${todayKey}`;
 
 function useIsNarrow(breakpoint = 1000) {
   const [narrow, setNarrow] = useState(() => window.innerWidth < breakpoint);
@@ -24,12 +27,26 @@ export default function App() {
 
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const [installed,     setInstalled]     = useState(false);
+  const [showNudge,     setShowNudge]     = useState(false);
 
   useEffect(() => {
     const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
     window.addEventListener('beforeinstallprompt', handler);
     window.addEventListener('appinstalled', () => setInstalled(true));
     return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  useEffect(() => {
+    if (localStorage.getItem(nudgeSeenKey)) return;
+    loadPhoto(todayKey).then(url => {
+      if (!url) {
+        setShowNudge(true);
+        localStorage.setItem(nudgeSeenKey, '1');
+      }
+    });
+    const hide = () => setShowNudge(false);
+    window.addEventListener('today-photo-saved', hide);
+    return () => window.removeEventListener('today-photo-saved', hide);
   }, []);
 
   const handleInstall = async () => {
@@ -46,7 +63,7 @@ export default function App() {
         <span className={styles.mobileNoticeIcon}>💻</span>
         <p className={styles.mobileNoticeTitle}>Best on a larger screen</p>
         <p className={styles.mobileNoticeText}>
-          This journal works best on a larger screen. Please open it on a desktop or tablet to create your page
+          This journal works best on a larger screen. Please open it on a desktop or tablet to start your creative journey
         </p>
       </div>
     );
@@ -54,6 +71,11 @@ export default function App() {
 
   return (
     <div className={styles.pageRoot}>
+      {showNudge && (
+        <p className={styles.nudge} data-print-hidden>
+          ✦ Welcome back ✦
+        </p>
+      )}
       <div className={styles.journalArea} id="journal-area">
         <div className={styles.journalWrapper} id="journal-wrapper">
           <div id="month-tabs">

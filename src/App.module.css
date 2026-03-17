@@ -1,3 +1,26 @@
+/* ── Memory nudge ────────────────────────────────────── */
+@keyframes nudgeShow {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.nudge {
+  position: fixed;
+  top: 30px;
+  left: 35%;
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  color: var(--color-ink-tertiary);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: var(--z-panel-btn);
+  opacity: 0;
+  animation: nudgeShow 6s ease-in-out 1s forwards;
+  background-color: #f8f6f3;
+}
+
 /* ── Install button ──────────────────────────────────── */
 .installBtn {
   position: fixed;
@@ -44,7 +67,7 @@
 .footer {
   position: fixed;
   bottom: 10px;
-  right: 10px;
+  left: 10px;
   display: flex;
   align-items: center;
   gap: var(--space-6);

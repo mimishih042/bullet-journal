@@ -83,6 +83,7 @@ export interface StickerItem {
   id: string;
   dataURL: string;
   order?: number;
+  isFavorite?: boolean;
 }
 
 export async function saveStickerItem(item: StickerItem): Promise<void> {

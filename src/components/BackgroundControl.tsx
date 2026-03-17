@@ -165,6 +165,17 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     setStickerPack(prev => prev.filter(s => s.id !== id));
   };
 
+  const toggleFavorite = async (id: string) => {
+    const updated = stickerPack.map(s =>
+      s.id === id ? { ...s, isFavorite: !s.isFavorite } : s
+    );
+    setStickerPack(updated);
+    const item = updated.find(s => s.id === id)!;
+    await saveStickerItem(item);
+  };
+
+  const favorites = stickerPack.filter(s => s.isFavorite);
+
   // ── Edit / reorder mode ───────────────────────────────────────────────────
   const [isEditingStickers, setIsEditingStickers] = useState(false);
   const [draggingId,        setDraggingId]        = useState<string | null>(null);
@@ -457,9 +468,65 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               )}
             </div>
 
-            {stickerPack.length > 0 && (
+            {/* ── Favorites grid ── */}
+            {favorites.length > 0 && (
+              <>
+                <p className={styles.favoritesLabel}>Favorites</p>
+                <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
+                  {favorites.map(sticker => (
+                    <div
+                      key={sticker.id}
+                      className={[
+                        styles.stickerThumbWrap,
+                        isEditingStickers ? styles.stickerThumbEditing : '',
+                      ].join(' ')}
+                      draggable={!isEditingStickers}
+                      onDragStart={!isEditingStickers ? e => {
+                        e.dataTransfer.setData(
+                          'sticker-data',
+                          JSON.stringify({ id: sticker.id, dataURL: sticker.dataURL })
+                        );
+                        e.dataTransfer.effectAllowed = 'copy';
+                        const ghost = document.createElement('img');
+                        ghost.src = sticker.dataURL;
+                        ghost.width = 80;
+                        ghost.height = 80;
+                        ghost.style.cssText =
+                          'position:fixed;top:-200px;left:-200px;object-fit:contain;pointer-events:none;';
+                        document.body.appendChild(ghost);
+                        e.dataTransfer.setDragImage(ghost, 40, 40);
+                        requestAnimationFrame(() => document.body.removeChild(ghost));
+                      } : undefined}
+                      title={isEditingStickers ? undefined : 'Drag to place on calendar'}
+                    >
+                      {isEditingStickers ? (
+                        <img src={sticker.dataURL} draggable={false} className={styles.stickerThumbImg} alt="" />
+                      ) : (
+                        <StickerPeelPreview src={sticker.dataURL} filterId={`fav-${sticker.id}`} />
+                      )}
+                      <button
+                        className={`${styles.favoriteBtn} ${styles.favoriteBtnActive}`}
+                        onClick={e => { e.stopPropagation(); toggleFavorite(sticker.id); }}
+                        title="Remove from favorites"
+                      >
+                        ★
+                      </button>
+                      <button
+                        className={`${styles.stickerThumbDelete} ${isEditingStickers ? styles.stickerThumbDeleteVisible : ''}`}
+                        onClick={() => handleDeleteSticker(sticker.id)}
+                        title="Remove from pack"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {stickerPack.some(s => !s.isFavorite) && (
               <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
-                {stickerPack.map((sticker, index) => (
+                {stickerPack.map((sticker, index) => sticker.isFavorite ? null : (
                   <div
                     key={sticker.id}
                     className={[
@@ -502,6 +569,13 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                     ) : (
                       <StickerPeelPreview src={sticker.dataURL} filterId={sticker.id} />
                     )}
+                    <button
+                      className={`${styles.favoriteBtn} ${sticker.isFavorite ? styles.favoriteBtnActive : ''}`}
+                      onClick={e => { e.stopPropagation(); toggleFavorite(sticker.id); }}
+                      title={sticker.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      {sticker.isFavorite ? '★' : '☆'}
+                    </button>
                     <button
                       className={`${styles.stickerThumbDelete} ${isEditingStickers ? styles.stickerThumbDeleteVisible : ''}`}
                       onClick={() => handleDeleteSticker(sticker.id)}

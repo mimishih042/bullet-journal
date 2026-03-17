@@ -61,6 +61,7 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
     setPendingImage(null);
     setPhotoURL(croppedDataURL);
     await savePhoto(dateKey, croppedDataURL);
+    if (isToday) window.dispatchEvent(new CustomEvent('today-photo-saved'));
   };
 
   const handleCropCancel = () => {
