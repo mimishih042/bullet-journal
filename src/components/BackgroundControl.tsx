@@ -177,89 +177,10 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
   const favorites = stickerPack.filter(s => s.isFavorite);
 
-  // ── Edit / reorder mode ───────────────────────────────────────────────────
+  // ── Edit mode ─────────────────────────────────────────────────────────────
   const [isEditingStickers, setIsEditingStickers] = useState(false);
-  const [draggingId,        setDraggingId]        = useState<string | null>(null);
-  const dragIndexRef        = useRef<number | null>(null);
-  const touchDragActiveRef  = useRef(false);
-  const longPressTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchStartPosRef    = useRef<{ x: number; y: number } | null>(null);
 
-  const handleReorderDragStart = (e: React.DragEvent, index: number, id: string) => {
-    dragIndexRef.current = index;
-    setDraggingId(id);
-    // Invisible drag image so the ghost doesn't fight with the live grid
-    const ghost = document.createElement('div');
-    ghost.style.cssText = 'position:fixed;top:-200px;left:-200px;width:1px;height:1px;';
-    document.body.appendChild(ghost);
-    e.dataTransfer.setDragImage(ghost, 0, 0);
-    requestAnimationFrame(() => document.body.removeChild(ghost));
-  };
-
-  const handleReorderDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    const from = dragIndexRef.current;
-    if (from === null || from === index) return;
-    setStickerPack(prev => {
-      const next = [...prev];
-      const [item] = next.splice(from, 1);
-      next.splice(index, 0, item);
-      return next;
-    });
-    dragIndexRef.current = index;
-  };
-
-  const handleReorderDragEnd = () => {
-    dragIndexRef.current = null;
-    setDraggingId(null);
-  };
-
-  // Touch-based reorder: global listeners so touchmove can be non-passive
-  useEffect(() => {
-    const onTouchMove = (e: TouchEvent) => {
-      if (!touchDragActiveRef.current || dragIndexRef.current === null) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      let target: Element | null = document.elementFromPoint(touch.clientX, touch.clientY);
-      while (target && !target.hasAttribute('data-reorder-index')) {
-        target = target.parentElement;
-      }
-      if (!target) return;
-      const toIndex = parseInt(target.getAttribute('data-reorder-index')!, 10);
-      const from = dragIndexRef.current;
-      if (isNaN(toIndex) || from === toIndex) return;
-      setStickerPack(prev => {
-        const next = [...prev];
-        const [item] = next.splice(from, 1);
-        next.splice(toIndex, 0, item);
-        return next;
-      });
-      dragIndexRef.current = toIndex;
-    };
-    const onTouchEnd = () => {
-      if (!touchDragActiveRef.current) return;
-      touchDragActiveRef.current = false;
-      dragIndexRef.current = null;
-      setDraggingId(null);
-    };
-    document.addEventListener('touchmove', onTouchMove, { passive: false });
-    document.addEventListener('touchend', onTouchEnd);
-    document.addEventListener('touchcancel', onTouchEnd);
-    return () => {
-      document.removeEventListener('touchmove', onTouchMove);
-      document.removeEventListener('touchend', onTouchEnd);
-      document.removeEventListener('touchcancel', onTouchEnd);
-    };
-  }, []);
-
-  const handleEditDone = async () => {
-    setIsEditingStickers(false);
-    setDraggingId(null);
-    // Persist new order: assign sequential order values matching the array index
-    const updated = stickerPack.map((s, i) => ({ ...s, order: i }));
-    setStickerPack(updated);
-    for (const item of updated) await saveStickerItem(item);
-  };
+  const handleEditDone = () => setIsEditingStickers(false);
 
   const handleSheetUpload = async (file: File) => {
     setExtracting(true);
@@ -547,8 +468,9 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                       )}
                       <button
                         className={`${styles.favoriteBtn} ${styles.favoriteBtnActive}`}
-                        onClick={e => { e.stopPropagation(); toggleFavorite(sticker.id); }}
-                        title="Remove from favorites"
+                        onClick={isEditingStickers ? e => { e.stopPropagation(); toggleFavorite(sticker.id); } : undefined}
+                        style={isEditingStickers ? undefined : { pointerEvents: 'none' }}
+                        title={isEditingStickers ? 'Remove from favorites' : undefined}
                       >
                         ★
                       </button>
@@ -567,64 +489,31 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
             {stickerPack.some(s => !s.isFavorite) && (
               <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
-                {stickerPack.map((sticker, index) => sticker.isFavorite ? null : (
+                {stickerPack.map((sticker) => sticker.isFavorite ? null : (
                   <div
                     key={sticker.id}
-                    data-reorder-index={index}
                     className={[
                       styles.stickerThumbWrap,
                       isEditingStickers ? styles.stickerThumbEditing : '',
-                      draggingId === sticker.id ? styles.stickerThumbDragging : '',
                     ].join(' ')}
-                    draggable
-                    onDragStart={e => {
-                      if (isEditingStickers) {
-                        handleReorderDragStart(e, index, sticker.id);
-                      } else {
-                        e.dataTransfer.setData(
-                          'sticker-data',
-                          JSON.stringify({ id: sticker.id, dataURL: sticker.dataURL })
-                        );
-                        e.dataTransfer.effectAllowed = 'copy';
-                        const ghost = document.createElement('img');
-                        ghost.src = sticker.dataURL;
-                        ghost.width = 80;
-                        ghost.height = 80;
-                        ghost.style.cssText =
-                          'position:fixed;top:-200px;left:-200px;object-fit:contain;pointer-events:none;';
-                        document.body.appendChild(ghost);
-                        e.dataTransfer.setDragImage(ghost, 40, 40);
-                        requestAnimationFrame(() => document.body.removeChild(ghost));
-                      }
-                    }}
-                    onDragOver={isEditingStickers ? e => handleReorderDragOver(e, index) : undefined}
-                    onDragEnd={isEditingStickers ? handleReorderDragEnd : undefined}
-                    onTouchStart={isEditingStickers ? e => {
-                      const touch = e.touches[0];
-                      touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
-                      longPressTimerRef.current = setTimeout(() => {
-                        longPressTimerRef.current = null;
-                        dragIndexRef.current = index;
-                        setDraggingId(sticker.id);
-                        touchDragActiveRef.current = true;
-                      }, 350);
+                    draggable={!isEditingStickers}
+                    onDragStart={!isEditingStickers ? e => {
+                      e.dataTransfer.setData(
+                        'sticker-data',
+                        JSON.stringify({ id: sticker.id, dataURL: sticker.dataURL })
+                      );
+                      e.dataTransfer.effectAllowed = 'copy';
+                      const ghost = document.createElement('img');
+                      ghost.src = sticker.dataURL;
+                      ghost.width = 80;
+                      ghost.height = 80;
+                      ghost.style.cssText =
+                        'position:fixed;top:-200px;left:-200px;object-fit:contain;pointer-events:none;';
+                      document.body.appendChild(ghost);
+                      e.dataTransfer.setDragImage(ghost, 40, 40);
+                      requestAnimationFrame(() => document.body.removeChild(ghost));
                     } : undefined}
-                    onTouchMove={isEditingStickers ? e => {
-                      if (!longPressTimerRef.current) return;
-                      const touch = e.touches[0];
-                      const start = touchStartPosRef.current!;
-                      if (Math.abs(touch.clientX - start.x) > 8 || Math.abs(touch.clientY - start.y) > 8) {
-                        clearTimeout(longPressTimerRef.current);
-                        longPressTimerRef.current = null;
-                      }
-                    } : undefined}
-                    onTouchEnd={isEditingStickers ? () => {
-                      if (longPressTimerRef.current) {
-                        clearTimeout(longPressTimerRef.current);
-                        longPressTimerRef.current = null;
-                      }
-                    } : undefined}
-                    title={isEditingStickers ? 'Hold to reorder' : 'Drag to place on calendar'}
+                    title={isEditingStickers ? undefined : 'Drag to place on calendar'}
                   >
                     {isEditingStickers ? (
                       <img
@@ -636,13 +525,16 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                     ) : (
                       <StickerPeelPreview src={sticker.dataURL} filterId={sticker.id} />
                     )}
-                    <button
-                      className={`${styles.favoriteBtn} ${sticker.isFavorite ? styles.favoriteBtnActive : ''}`}
-                      onClick={e => { e.stopPropagation(); toggleFavorite(sticker.id); }}
-                      title={sticker.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                    >
-                      {sticker.isFavorite ? '★' : '☆'}
-                    </button>
+                    {(isEditingStickers || sticker.isFavorite) && (
+                      <button
+                        className={`${styles.favoriteBtn} ${sticker.isFavorite ? styles.favoriteBtnActive : ''}`}
+                        onClick={isEditingStickers ? e => { e.stopPropagation(); toggleFavorite(sticker.id); } : undefined}
+                        style={isEditingStickers ? undefined : { pointerEvents: 'none' }}
+                        title={isEditingStickers ? (sticker.isFavorite ? 'Remove from favorites' : 'Add to favorites') : undefined}
+                      >
+                        {sticker.isFavorite ? '★' : '☆'}
+                      </button>
+                    )}
                     <button
                       className={`${styles.stickerThumbDelete} ${isEditingStickers ? styles.stickerThumbDeleteVisible : ''}`}
                       onClick={() => handleDeleteSticker(sticker.id)}

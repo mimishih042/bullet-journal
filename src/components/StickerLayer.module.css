@@ -26,7 +26,7 @@
   --peel-start:      calc(-1 * var(--peel-p));
   --peel-end:        calc(100% + var(--peel-p));
   --peel-hover-pct:  15%;
-  --peel-active-pct: 20%;
+  --peel-active-pct: 25%;
 }
 
 /* ── Sticker layer container ─────────────────────────── */
@@ -343,6 +343,52 @@
   justify-content: center;
   z-index: var(--z-handles);
   padding: 0;
+}
+
+/* ── Locked state: stickers become fully passive ─────── */
+/*
+  .stickerWrap has pointer-events:all which overrides the layer's none.
+  Targeting the wrap directly here ensures events pass through to cells.
+*/
+.isLocked .stickerWrap {
+  pointer-events: none;
+  cursor: default;
+}
+
+/* Suppress peel on hover when locked */
+.isLocked .stickerWrap:hover .stickerMain {
+  clip-path: polygon(
+    var(--peel-start) var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-end)   var(--peel-end),
+    var(--peel-start) var(--peel-end)
+  );
+}
+
+.isLocked .stickerWrap:hover .stickerFlap {
+  clip-path: polygon(
+    var(--peel-start) var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-end)   var(--peel-start),
+    var(--peel-start) var(--peel-start)
+  );
+  top: calc(-100% - 2 * var(--peel-p));
+}
+
+/* Suppress selection outline on hover when locked */
+.isLocked .stickerWrap:hover .sticker {
+  outline: none;
+}
+
+/* Keep handles invisible when locked */
+.isLocked .stickerWrap:hover .rotateHandle,
+.isLocked .stickerWrap:hover .resizeHandle,
+.isLocked .stickerWrap:hover .deleteBtn,
+.isLocked .stickerWrap.isSelected .rotateHandle,
+.isLocked .stickerWrap.isSelected .resizeHandle,
+.isLocked .stickerWrap.isSelected .deleteBtn {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ── Touch devices: hide handles, enlarge delete button ─ */

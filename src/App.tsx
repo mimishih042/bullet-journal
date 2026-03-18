@@ -22,7 +22,8 @@ function useIsNarrow(breakpoint = 1000) {
 export default function App() {
   const [viewYear,   setViewYear]   = useState(today.getFullYear());
   const [viewMonth,  setViewMonth]  = useState(today.getMonth());
-  const [panelOpen,  setPanelOpen]  = useState(true);
+  const [panelOpen,      setPanelOpen]      = useState(true);
+  const [stickersLocked, setStickersLocked] = useState(false);
   const isNarrow = useIsNarrow();
 
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
@@ -86,6 +87,7 @@ export default function App() {
             month={viewMonth}
             onPrevYear={() => setViewYear(y => y - 1)}
             onNextYear={() => setViewYear(y => y + 1)}
+            stickersLocked={stickersLocked}
           />
         </div>
 
@@ -104,11 +106,20 @@ export default function App() {
         month={viewMonth}
       />
 
-      {installPrompt && !installed && (
-        <button className={styles.installBtn} onClick={handleInstall} data-print-hidden>
-          📌 Pin to your desktop
+      <div className={styles.topLeftActions} data-print-hidden>
+        {installPrompt && !installed && (
+          <button className={styles.installBtn} onClick={handleInstall}>
+            📌 Pin to your desktop
+          </button>
+        )}
+        <button
+          className={`${styles.lockBtn} ${stickersLocked ? styles.lockBtnOn : ''}`}
+          onClick={() => setStickersLocked(l => !l)}
+          title={stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
+        >
+          {stickersLocked ? '🔒' : '🔓'} {stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
         </button>
-      )}
+      </div>
     </div>
   );
 }

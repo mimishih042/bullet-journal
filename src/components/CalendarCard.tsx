@@ -13,9 +13,10 @@ interface Props {
   month: number;
   onPrevYear: () => void;
   onNextYear: () => void;
+  stickersLocked: boolean;
 }
 
-export default function CalendarCard({ year, month, onPrevYear, onNextYear }: Props) {
+export default function CalendarCard({ year, month, onPrevYear, onNextYear, stickersLocked }: Props) {
   const [placedStickers, setPlacedStickers] = useState<PlacedSticker[]>([]);
   const [stickerDragOver, setStickerDragOver] = useState(false);
   const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
@@ -136,6 +137,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear }: Pr
         onUpdate={handleStickerUpdate}
         cardWidth={cardSize.width}
         cardHeight={cardSize.height}
+        locked={stickersLocked}
       />
     </div>
   );

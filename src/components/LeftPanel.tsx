@@ -54,6 +54,8 @@ export default function LeftPanel({ year, month, onPrevYear, onNextYear }: Props
           onChange={e => setNotes(e.target.value)}
         />
       </div>
+
+      <div>{year}</div>
     </div>
   );
 }

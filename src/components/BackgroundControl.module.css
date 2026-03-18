@@ -177,6 +177,53 @@
   margin: var(--space-2) 0;
 }
 
+/* ── Lock stickers toggle ──────────────────────────────────────────────── */
+.lockToggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.lockToggleLabel {
+  font-size: var(--text-md);
+  color: var(--color-ink);
+  user-select: none;
+}
+
+.lockToggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: background 200ms;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.lockToggleOn {
+  background: var(--color-ink);
+}
+
+.lockToggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  transition: transform 200ms, background 200ms;
+}
+
+.lockToggleOn .lockToggleThumb {
+  transform: translateX(16px);
+  background: var(--color-surface-paper);
+}
+
 /* ── Sticker section header ────────────────────────────────────────────── */
 .stickerSectionHeader {
   display: flex;

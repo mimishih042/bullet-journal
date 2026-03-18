@@ -13,9 +13,10 @@ interface PlacedStickerItemProps {
   onMove: (id: string, xFrac: number, yFrac: number) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, patch: Partial<PlacedSticker>) => void;
+  locked: boolean;
 }
 
-function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, onUpdate }: PlacedStickerItemProps) {
+function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, onUpdate, locked }: PlacedStickerItemProps) {
   const wrapRef  = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
 
@@ -37,6 +38,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
   const onUpdateRef   = useRef(onUpdate);
   const stickerIdRef  = useRef(sticker.id);
   const isSelectedRef = useRef(isSelected);
+  const lockedRef     = useRef(locked);
 
   useEffect(() => { posRef.current        = pos;         }, [pos]);
   useEffect(() => { stickerWRef.current   = stickerW;    }, [stickerW]);
@@ -47,6 +49,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
   useEffect(() => { onMoveRef.current     = onMove;      }, [onMove]);
   useEffect(() => { onUpdateRef.current   = onUpdate;    }, [onUpdate]);
   useEffect(() => { isSelectedRef.current = isSelected;  }, [isSelected]);
+  useEffect(() => { lockedRef.current     = locked;      }, [locked]);
 
   useEffect(() => {
     if (cardWidth > 0 && cardHeight > 0) {
@@ -234,6 +237,8 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
 
     // ── touchstart on the sticker ──────────────────────────────────
     const onTouchStart = (e: TouchEvent) => {
+      // Don't handle if stickers are locked
+      if (lockedRef.current) return;
       // Don't handle if the touch started on the delete button
       if ((e.target as HTMLElement).closest('button')) return;
       // Reject if another sticker already owns the gesture
@@ -286,6 +291,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
 
   // Route pointer events to mouse handlers only; touch is handled natively above
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (locked) return;
     if (e.pointerType === 'mouse') onMousePointerDown(e);
   };
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -297,6 +303,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
 
   // ── DESKTOP handles: rotate ───────────────────────────────────────
   const startRotate = useCallback((e: React.PointerEvent) => {
+    if (lockedRef.current) return;
     e.stopPropagation();
     e.preventDefault();
     setIsAdjusting(true);
@@ -327,6 +334,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
   type ResizeCorner = 'br' | 'bl' | 'tl';
 
   const startResize = useCallback((corner: ResizeCorner) => (e: React.PointerEvent) => {
+    if (lockedRef.current) return;
     e.stopPropagation();
     e.preventDefault();
     setIsAdjusting(true);
@@ -374,16 +382,6 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
     document.addEventListener('pointerup',   onUp);
   }, [cardWidth, cardHeight, onUpdate, sticker.id]);
 
-  // ── Peel padding calc ──────────────────────────────────────────────
-  const PEEL_SIN = Math.sin(67 * Math.PI / 180);
-  const PEEL_COS = Math.cos(67 * Math.PI / 180);
-  const peelP = Math.max(
-    10,
-    Math.ceil((PEEL_SIN * Math.max(stickerW, stickerH) - PEEL_COS * Math.min(stickerW, stickerH)) / 2) + 4,
-  );
-
-  const backFilterId = `stickerBack-${sticker.id}`;
-
   return (
     <div
       ref={wrapRef}
@@ -396,36 +394,9 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
       <div
         ref={innerRef}
         className={styles.sticker}
-        style={{ transform: `rotate(${rotation}deg)`, width: stickerW, height: stickerH, '--peel-p': `${peelP}px` } as React.CSSProperties}
+        style={{ transform: `rotate(${rotation}deg)`, width: stickerW, height: stickerH } as React.CSSProperties}
       >
-        <svg width="0" height="0" className={styles.filterSvg}>
-          <defs>
-            <filter id={backFilterId}>
-              <feOffset dx="0" dy="0" in="SourceAlpha" result="shape" />
-              <feFlood floodColor="rgb(221 214 200)" result="flood" />
-              <feComposite operator="in" in="flood" in2="shape" />
-            </filter>
-          </defs>
-        </svg>
-
-        <div className={styles.peelContainer}>
-          <div className={styles.stickerMain}>
-            <div className={styles.stickerMainInner}>
-              <img src={sticker.stickerDataURL} draggable={false} alt="" className={styles.stickerImg} />
-            </div>
-          </div>
-          <div className={styles.stickerFlap}>
-            <div className={styles.stickerFlapInner}>
-              <img
-                src={sticker.stickerDataURL}
-                draggable={false}
-                alt=""
-                className={styles.stickerFlapImg}
-                style={{ filter: `url(#${backFilterId})` }}
-              />
-            </div>
-          </div>
-        </div>
+        <img src={sticker.stickerDataURL} draggable={false} alt="" className={styles.stickerImg} />
 
         {/* Desktop-only handles — hidden on touch via @media (pointer: coarse) */}
         <div className={styles.rotateHandle} onPointerDown={startRotate} title="Rotate">↻</div>
@@ -451,11 +422,12 @@ interface Props {
   onMove: (id: string, xFrac: number, yFrac: number) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, patch: Partial<PlacedSticker>) => void;
+  locked?: boolean;
 }
 
-export default function StickerLayer({ stickers, cardWidth, cardHeight, onMove, onDelete, onUpdate }: Props) {
+export default function StickerLayer({ stickers, cardWidth, cardHeight, onMove, onDelete, onUpdate, locked }: Props) {
   return (
-    <div className={styles.stickerLayer}>
+    <div className={`${styles.stickerLayer} ${locked ? styles.isLocked : ''}`}>
       {stickers.map(sticker => (
         <PlacedStickerItem
           key={sticker.id}
@@ -465,6 +437,7 @@ export default function StickerLayer({ stickers, cardWidth, cardHeight, onMove, 
           onMove={onMove}
           onDelete={onDelete}
           onUpdate={onUpdate}
+          locked={locked ?? false}
         />
       ))}
     </div>

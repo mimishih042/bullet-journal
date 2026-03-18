@@ -21,12 +21,47 @@
   background-color: #f8f6f3;
 }
 
+/* ── Top-left action bar (lock + install) ────────────── */
+.topLeftActions {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  z-index: var(--z-top);
+}
+
+.lockBtn {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: 8px 10px;
+  border-radius: var(--space-3);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-card);
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+  transition: background var(--duration-base);
+  white-space: nowrap;
+}
+
+.lockBtn:hover {
+  background: var(--color-surface-hover);
+}
+
+.lockBtnOn {
+  background: var(--color-ink);
+  color: var(--color-surface-paper);
+  border-color: var(--color-ink);
+}
+
+.lockBtnOn:hover {
+  background: var(--color-ink);
+  opacity: 0.85;
+}
+
 /* ── Install button ──────────────────────────────────── */
 .installBtn {
-  position: fixed;
-  top: 20px;
-  left: 100px;
-  transform: translateX(-50%);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   padding: 8px 10px 8px 8px;
@@ -36,7 +71,6 @@
   color: var(--color-ink-secondary);
   cursor: pointer;
   transition: background var(--duration-base);
-  z-index: var(--z-top);
   white-space: nowrap;
 }
 
