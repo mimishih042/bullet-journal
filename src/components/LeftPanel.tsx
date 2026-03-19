@@ -40,7 +40,7 @@ export default function LeftPanel({ year, month, onPrevYear, onNextYear }: Props
 
       {/* Month header */}
       <div className={styles.panelHeader}>
-        <span className={styles.monthNumber}>{String(month + 1).padStart(2, '0')+ '/'}</span>
+        <span className={styles.yearNumber}>{year}</span>
         <h2 className={styles.monthName}>{MONTH_NAMES[month]}</h2>
       </div>
 
@@ -54,8 +54,6 @@ export default function LeftPanel({ year, month, onPrevYear, onNextYear }: Props
           onChange={e => setNotes(e.target.value)}
         />
       </div>
-
-      <div>{year}</div>
     </div>
   );
 }

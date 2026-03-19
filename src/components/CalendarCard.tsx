@@ -53,6 +53,9 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
     }
   };
 
+  const nextZIndex = (stickers: PlacedSticker[]) =>
+    stickers.length === 0 ? 1 : Math.max(...stickers.map(s => s.zIndex ?? 0)) + 1;
+
   const handleDrop = (e: React.DragEvent) => {
     setStickerDragOver(false);
     const data = e.dataTransfer.getData('sticker-data');
@@ -79,6 +82,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         width:  fracW,
         height: fracH,
         rotation: 0,
+        zIndex: nextZIndex(placedStickers),
       };
 
       const updated = [...placedStickers, newSticker];
@@ -104,6 +108,15 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
     const updated = placedStickers.map(s => s.id === id ? { ...s, ...patch } : s);
     setPlacedStickers(updated);
     savePlacedStickers(monthKey, updated);
+  };
+
+  const handleBringToFront = (id: string) => {
+    setPlacedStickers(prev => {
+      const top = nextZIndex(prev);
+      const updated = prev.map(s => s.id === id ? { ...s, zIndex: top } : s);
+      savePlacedStickers(monthKey, updated);
+      return updated;
+    });
   };
 
   return (
@@ -135,6 +148,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         onMove={handleStickerMove}
         onDelete={handleStickerDelete}
         onUpdate={handleStickerUpdate}
+        onBringToFront={handleBringToFront}
         cardWidth={cardSize.width}
         cardHeight={cardSize.height}
         locked={stickersLocked}

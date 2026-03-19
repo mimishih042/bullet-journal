@@ -111,6 +111,7 @@ export interface PlacedSticker {
   width: number;
   height: number;
   rotation: number;
+  zIndex?: number;
 }
 
 export async function savePlacedStickers(monthKey: string, stickers: PlacedSticker[]): Promise<void> {

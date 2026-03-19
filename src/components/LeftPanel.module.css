@@ -45,11 +45,10 @@
 }
 .yearNavBtn:hover { color: #3a2010; }
 
-.monthNumber {
+.yearNumber {
   font-size: var(--text-2xl);
   font-family: var(--font-sans);
   color: var(--color-ink-faint);
-  letter-spacing: 0.12em;
 }
 
 .monthName {
