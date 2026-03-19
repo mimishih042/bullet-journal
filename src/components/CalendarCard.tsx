@@ -3,6 +3,7 @@ import styles from './CalendarCard.module.css';
 import LeftPanel from './LeftPanel';
 import CalendarGrid from './CalendarGrid';
 import StickerLayer from './StickerLayer';
+import DrawingCanvas from './DrawingCanvas';
 import { loadPlacedStickers, savePlacedStickers } from '../storage';
 import type { PlacedSticker } from '../storage';
 import { useHistoryContext } from '../context/HistoryContext';
@@ -16,9 +17,13 @@ interface Props {
   onNextYear: () => void;
   stickersLocked: boolean;
   stickersVisible: boolean;
+  drawMode: boolean;
+  drawColor: string;
+  drawSize: number;
+  eraserMode: boolean;
 }
 
-export default function CalendarCard({ year, month, onPrevYear, onNextYear, stickersLocked, stickersVisible }: Props) {
+export default function CalendarCard({ year, month, onPrevYear, onNextYear, stickersLocked, stickersVisible, drawMode, drawColor, drawSize, eraserMode }: Props) {
   const [placedStickers, setPlacedStickers] = useState<PlacedSticker[]>([]);
   const [stickerDragOver, setStickerDragOver] = useState(false);
   const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
@@ -273,6 +278,14 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         <CalendarGrid year={year} month={month} />
       </div>
 
+      <DrawingCanvas
+        drawMode={drawMode}
+        color={drawColor}
+        size={drawSize}
+        eraserMode={eraserMode}
+        monthKey={monthKey}
+      />
+
       <StickerLayer
         stickers={placedStickers}
         onMove={handleStickerMove}
@@ -281,7 +294,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         onBringToFront={handleBringToFront}
         cardWidth={cardSize.width}
         cardHeight={cardSize.height}
-        locked={stickersLocked}
+        locked={stickersLocked || drawMode}
         visible={stickersVisible}
       />
     </div>

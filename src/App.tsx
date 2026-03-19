@@ -29,6 +29,10 @@ export default function App() {
   const [panelOpen,        setPanelOpen]        = useState(true);
   const [stickersLocked,   setStickersLocked]   = useState(false);
   const [stickersVisible,  setStickersVisible]  = useState(true);
+  const [drawMode,       setDrawMode]       = useState(false);
+  const [drawColor,      setDrawColor]      = useState('#1a1a1a');
+  const [drawSize,       setDrawSize]       = useState(4);
+  const [eraserMode,     setEraserMode]     = useState(false);
   const isNarrow = useIsNarrow();
   const history = useHistory();
 
@@ -105,6 +109,10 @@ export default function App() {
             onNextYear={() => setViewYear(y => y + 1)}
             stickersLocked={stickersLocked}
             stickersVisible={stickersVisible}
+            drawMode={drawMode}
+            drawColor={drawColor}
+            drawSize={drawSize}
+            eraserMode={eraserMode}
           />
         </div>
 
@@ -123,7 +131,7 @@ export default function App() {
         month={viewMonth}
       />
 
-      <div className={styles.topLeftActions} data-print-hidden>
+      <div data-print-hidden>
         <div className={styles.actionContainer}>
           <button
             className={styles.undoBtn}
@@ -151,7 +159,44 @@ export default function App() {
           >
             {stickersVisible ? '👁 Hide stickers' : '🙈 Unhide stickers'}
           </button>
+          <button
+            className={`${styles.lockBtn} ${drawMode ? styles.lockBtnOn : ''}`}
+            onClick={() => { setDrawMode(d => !d); setEraserMode(false); }}
+            title={drawMode ? 'Exit draw mode' : 'Draw mode'}
+          >
+            ✏️ Draw
+          </button>
         </div>
+
+        {drawMode && (
+          <div className={styles.drawToolbar} data-print-hidden>
+            <div className={styles.drawColors}>
+              <input
+                type="color"
+                className={`${styles.colorPickerInput} ${!eraserMode ? styles.colorPickerActive : ''}`}
+                value={drawColor}
+                onChange={e => { setDrawColor(e.target.value); setEraserMode(false); }}
+                title="Custom color"
+              />
+            </div>
+            <input
+              type="range"
+              className={styles.sizeSlider}
+              min={2}
+              max={24}
+              value={drawSize}
+              onChange={e => setDrawSize(Number(e.target.value))}
+              title={`Brush size: ${drawSize}`}
+            />
+            <button
+              className={`${styles.lockBtn} ${eraserMode ? styles.lockBtnOn : ''}`}
+              onClick={() => setEraserMode(e => !e)}
+              title="Eraser"
+            >
+              ◎ Eraser
+            </button>
+          </div>
+        )}
       </div>
     </div>
     </HistoryContext.Provider>
