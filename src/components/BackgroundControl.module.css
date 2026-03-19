@@ -15,11 +15,16 @@
   justify-content: center;
 }
 
-.bgBtn:hover {
+.bgBtn:hover:not(:disabled) {
   width: 42px;
   height: 42px;
   transform: rotate(7deg);
   transition: ease;
+}
+
+.bgBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .bgBtnActive {
@@ -166,8 +171,13 @@
   margin-bottom: 16px;
 }
 
-.actionBtn:hover {
+.actionBtn:hover:not(:disabled) {
   background: var(--color-surface-subtle);
+}
+
+.actionBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 /* ── Divider ───────────────────────────────────────────────────────────── */

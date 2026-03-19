@@ -33,16 +33,15 @@ export default function ExtractModal({ onUpload, onCancel }: Props) {
     <div className={styles.overlay} onClick={onCancel}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
 
-        <p className={styles.title}>Extract stickers from sheet</p>
+        <p className={styles.title}>Extract from sticker sheet</p>
 
         <div className={styles.body}>
           <p className={styles.description}>
-            Upload a photo of your sticker sheet and the app will automatically
-            cut out each sticker with a transparent background — no editing needed.
+            Upload your sticker sheet to create stickers.
           </p>
 
           <ul className={styles.tips}>
-            <li>Use a sheet with a <strong>white or light background</strong></li>
+            <li>Use a sticker sheet with a <strong>white or light background</strong></li>
             <li>Make sure stickers have clear, visible edges</li>
           </ul>
 

@@ -492,7 +492,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                 </button>
               )}
               <span className={styles.addModalTitle}>
-                {addModalView === 'select' ? 'Add stickers' : 'Extract from sheet'}
+                {addModalView === 'select' ? 'Add stickers' : 'Extract from sticker sheet'}
               </span>
               <button
                 className={styles.addModalClose}
@@ -518,8 +518,8 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                   onClick={() => setAddModalView('extract')}
                 >
                   <span className={styles.addModalOptionIcon}>✨</span>
-                  <span className={styles.addModalOptionTitle}>Extract from sheet</span>
-                  <span className={styles.addModalOptionDesc}>Upload a sheet and we'll cut out each sticker automatically</span>
+                  <span className={styles.addModalOptionTitle}>Extract from sticker sheet</span>
+                  <span className={styles.addModalOptionDesc}>Upload a sticker sheet to create stickers</span>
                 </button>
               </div>
             )}
@@ -527,12 +527,8 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             {/* ── Extract view ── */}
             {addModalView === 'extract' && (
               <div className={extractStyles.body}>
-                <p className={extractStyles.description}>
-                  Upload a photo of your sticker sheet and the app will automatically
-                  cut out each sticker with a transparent background — no editing needed.
-                </p>
                 <ul className={extractStyles.tips}>
-                  <li>Use a sheet with a <strong>white or light background</strong></li>
+                  <li>Use a sticker sheet with a <strong>white or light background</strong></li>
                   <li>Make sure stickers have clear, visible edges</li>
                 </ul>
                 <button
@@ -595,6 +591,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
         className={`${styles.bgBtn} ${open ? styles.bgBtnActive : ''}`}
         title={open ? 'Close panel' : 'Change background & stickers'}
         onClick={onToggle}
+        disabled={isEditingStickers}
         data-print-hidden
       >
         <img src={EditIcon} alt="" />
@@ -756,7 +753,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             <button
               className={styles.actionBtn}
               onClick={() => setShowAddModal(true)}
-              disabled={extracting}
+              disabled={extracting || isEditingStickers}
             >
               {extracting ? 'Extracting…' : '+ Add stickers'}
             </button>

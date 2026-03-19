@@ -147,7 +147,7 @@ export default function App() {
           <button
             className={`${styles.lockBtn} ${!stickersVisible ? styles.lockBtnOn : ''}`}
             onClick={() => setStickersVisible(v => !v)}
-            title={stickersVisible ? 'Hide stickers' : 'Unhide stickers'}
+            title={stickersVisible ? 'Hide stickers' : 'Show stickers'}
           >
             {stickersVisible ? '👁 Hide stickers' : '🙈 Unhide stickers'}
           </button>
