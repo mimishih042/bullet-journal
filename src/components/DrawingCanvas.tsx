@@ -77,12 +77,26 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
   // Suppress browser selection / callout / context-menu while drawing
   useEffect(() => {
     if (!drawMode) return;
+
+    // Stamp body so global CSS can kill user-select everywhere (not just journal wrapper)
+    document.body.classList.add('draw-mode-active');
+
     const prevent = (e: Event) => e.preventDefault();
+    // Clear any selection that sneaks through (iOS force-touch bypasses selectstart)
+    const clearSel = () => window.getSelection()?.removeAllRanges();
+
     document.addEventListener('contextmenu', prevent);
     document.addEventListener('selectstart', prevent);
+    document.addEventListener('selectionchange', clearSel);
+    // touchstart { passive: false } lets us preventDefault on iOS long-press / force-touch
+    document.addEventListener('touchstart', prevent, { passive: false });
+
     return () => {
+      document.body.classList.remove('draw-mode-active');
       document.removeEventListener('contextmenu', prevent);
       document.removeEventListener('selectstart', prevent);
+      document.removeEventListener('selectionchange', clearSel);
+      document.removeEventListener('touchstart', prevent);
     };
   }, [drawMode]);
 

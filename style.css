@@ -14,6 +14,15 @@ body {
   transition: background var(--duration-xslow);
 }
 
+/* Kill ALL text selection / callouts while draw mode is active.
+   Applied to <body> so it covers everything, not just the journal area. */
+body.draw-mode-active,
+body.draw-mode-active * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
 @media print {
   /* Hide the settings toggle button and settings panel */
   [data-print-hidden] { display: none !important; }
