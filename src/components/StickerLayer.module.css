@@ -115,6 +115,9 @@
   object-fit: contain;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none; 
+}
+  /* -webkit-user-drag: none;
 }
 
 /* ── Peel host for non-draggable contexts (e.g. settings panel) ─── */
@@ -126,6 +129,8 @@
   user-select: none;
   cursor: grab;
   overflow: hidden;
+  /* iOS Safari: suppress long-press callout on the peel host and its images */
+  -webkit-touch-callout: none;
 }
 
 .stickerPeelHost:active { cursor: grabbing; }
@@ -199,6 +204,8 @@
   object-fit: contain;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
+  /* -webkit-user-drag: none; */
 }
 
 /* Hover: expand the flap and move it into position */

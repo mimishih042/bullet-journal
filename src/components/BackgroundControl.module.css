@@ -261,6 +261,9 @@
   cursor: grab;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.06);
+  /* Prevent iOS Safari long-press callout and selection on drag source */
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 .stickerThumbWrap:active {
@@ -296,6 +299,8 @@
   border-radius: var(--radius-md);
   pointer-events: none;
   user-select: none;
+  /* iOS Safari: suppress long-press image menu directly on <img> elements */
+  -webkit-touch-callout: none;
 }
 
 .stickerThumbDelete {

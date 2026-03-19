@@ -107,6 +107,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   const [stickerPack, setStickerPack] = useState<StickerItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stickerInputRef = useRef<HTMLInputElement>(null);
+  const touchDragRef = useRef<{ dataURL: string; ghost: HTMLDivElement } | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [showExtractModal, setShowExtractModal] = useState(false);
 
@@ -357,6 +358,59 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     }
   };
 
+  const handleStickerTouchStart = (dataURL: string) => (e: React.TouchEvent) => {
+    if (isEditingStickers) return;
+    const touch = e.touches[0];
+
+    const ghost = document.createElement('div');
+    ghost.style.cssText = [
+      'position:fixed',
+      'width:80px',
+      'height:80px',
+      'pointer-events:none',
+      'z-index:9999',
+      'opacity:0.85',
+      'transform:translate(-50%,-50%)',
+      `left:${touch.clientX}px`,
+      `top:${touch.clientY}px`,
+    ].join(';');
+    const img = document.createElement('img');
+    img.src = dataURL;
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+    ghost.appendChild(img);
+    document.body.appendChild(ghost);
+    touchDragRef.current = { dataURL, ghost };
+
+    const onMove = (ev: TouchEvent) => {
+      ev.preventDefault();
+      if (!touchDragRef.current) return;
+      const t = ev.touches[0];
+      touchDragRef.current.ghost.style.left = `${t.clientX}px`;
+      touchDragRef.current.ghost.style.top  = `${t.clientY}px`;
+    };
+
+    const cleanup = () => {
+      document.removeEventListener('touchmove',   onMove);
+      document.removeEventListener('touchend',    onEnd);
+      document.removeEventListener('touchcancel', onEnd);
+    };
+
+    const onEnd = (ev: TouchEvent) => {
+      if (!touchDragRef.current) return;
+      const t = ev.changedTouches[0];
+      touchDragRef.current.ghost.remove();
+      touchDragRef.current = null;
+      cleanup();
+      document.dispatchEvent(new CustomEvent('sticker-touch-drop', {
+        detail: { dataURL, clientX: t.clientX, clientY: t.clientY },
+      }));
+    };
+
+    document.addEventListener('touchmove',   onMove, { passive: false });
+    document.addEventListener('touchend',    onEnd);
+    document.addEventListener('touchcancel', onEnd);
+  };
+
   return (
     <>
       {showExtractModal && (
@@ -459,6 +513,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                         e.dataTransfer.setDragImage(ghost, 40, 40);
                         requestAnimationFrame(() => document.body.removeChild(ghost));
                       } : undefined}
+                      onTouchStart={!isEditingStickers ? handleStickerTouchStart(sticker.dataURL) : undefined}
                       title={isEditingStickers ? undefined : 'Drag to place on calendar'}
                     >
                       {isEditingStickers ? (
@@ -513,6 +568,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                       e.dataTransfer.setDragImage(ghost, 40, 40);
                       requestAnimationFrame(() => document.body.removeChild(ghost));
                     } : undefined}
+                    onTouchStart={!isEditingStickers ? handleStickerTouchStart(sticker.dataURL) : undefined}
                     title={isEditingStickers ? undefined : 'Drag to place on calendar'}
                   >
                     {isEditingStickers ? (

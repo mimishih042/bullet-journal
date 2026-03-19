@@ -22,6 +22,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
   const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const monthKey = `placed-${year}-${month}`;
+  const placedStickersRef = useRef(placedStickers);
 
   useLayoutEffect(() => {
     if (!cardRef.current) return;
@@ -33,11 +34,53 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
     return () => observer.disconnect();
   }, []);
 
+  // keep ref in sync so the touch-drop handler always sees fresh state
+  useEffect(() => { placedStickersRef.current = placedStickers; }, [placedStickers]);
+
   // load placed stickers when month/year changes
   useEffect(() => {
     setPlacedStickers([]);
     loadPlacedStickers(monthKey).then(setPlacedStickers);
   }, [monthKey]);
+
+  // touch drag-and-drop from the sticker panel (iOS Safari doesn't support HTML5 DnD)
+  useEffect(() => {
+    const handleTouchDrop = (e: Event) => {
+      const { dataURL, clientX, clientY } = (e as CustomEvent<{ dataURL: string; clientX: number; clientY: number }>).detail;
+      if (!cardRef.current) return;
+      const rect = cardRef.current.getBoundingClientRect();
+      if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return;
+
+      const pixelX = clientX - rect.left;
+      const pixelY = clientY - rect.top;
+
+      const img = new Image();
+      img.onload = () => {
+        const fracW    = 80 / rect.width;
+        const fracH    = fracW * (img.naturalHeight / img.naturalWidth);
+        const halfPixH = (fracH * rect.width) / 2;
+
+        const newSticker: PlacedSticker = {
+          id: crypto.randomUUID(),
+          stickerDataURL: dataURL,
+          x: (pixelX - 40) / rect.width,
+          y: (pixelY - halfPixH) / rect.height,
+          width: fracW,
+          height: fracH,
+          rotation: 0,
+          zIndex: nextZIndex(placedStickersRef.current),
+        };
+
+        const updated = [...placedStickersRef.current, newSticker];
+        setPlacedStickers(updated);
+        savePlacedStickers(monthKey, updated);
+      };
+      img.src = dataURL;
+    };
+
+    document.addEventListener('sticker-touch-drop', handleTouchDrop);
+    return () => document.removeEventListener('sticker-touch-drop', handleTouchDrop);
+  }, [monthKey]); // monthKey is the only dependency — sticker state is read via ref
 
   const handleDragOver = (e: React.DragEvent) => {
     if (e.dataTransfer.types.includes('sticker-data')) {
