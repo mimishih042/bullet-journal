@@ -44,7 +44,6 @@ export default function ExtractModal({ onUpload, onCancel }: Props) {
           <ul className={styles.tips}>
             <li>Use a sheet with a <strong>white or light background</strong></li>
             <li>Make sure stickers have clear, visible edges</li>
-            <li>Good lighting and a straight-on angle give the best results</li>
           </ul>
 
           <button

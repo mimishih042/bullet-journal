@@ -412,6 +412,129 @@
   margin-top: 0px;
 }
 
+/* ── Add-stickers choice modal ─────────────────────────────────────────── */
+.addModal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.addModalCard {
+  background: var(--color-surface-paper);
+  background-image: var(--bg-grid);
+  background-size: var(--bg-grid-size);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg, 14px);
+  box-shadow: var(--shadow-panel);
+  width: min(340px, 90vw);
+  padding: var(--space-8) var(--space-8) var(--space-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.addModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px dashed;
+}
+
+.addModalTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  color: var(--color-ink-secondary);
+  margin: 0;
+  text-align: center;
+  width: 100%;
+  letter-spacing: 0.05em;
+}
+
+.addModalBack {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+  transition: background var(--duration-base), color var(--duration-base);
+  white-space: nowrap;
+}
+
+.addModalBack:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--color-ink);
+}
+
+.addModalClose {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background var(--duration-base), color var(--duration-base);
+}
+
+.addModalClose:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.addModalOptions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+.addModalOption {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-ink);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--duration-base);
+  font-family: var(--font-sans);
+}
+
+.addModalOption:hover {
+  background: var(--color-surface-subtle);
+}
+
+.addModalOptionIcon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.addModalOptionTitle {
+  font-size: var(--text-md);
+  font-weight: bold;
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+.addModalOptionDesc {
+  font-size: var(--text-sm);
+  color: var(--color-ink-secondary);
+  line-height: 1.4;
+}
+
 /* ── Sheet extractor preview ───────────────────────────────────────────── */
 .sheetPreview {
   display: flex;

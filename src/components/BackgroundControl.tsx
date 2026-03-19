@@ -3,9 +3,10 @@ import { toPng } from 'html-to-image';
 import { saveSetting, loadSetting, saveStickerItem, loadAllStickers, deleteStickerItem } from '../storage';
 import type { StickerItem } from '../storage';
 import EditIcon from '../assets/edit.svg'
+import ExtractExample from '../assets/extract-example.png';
 import styles from './BackgroundControl.module.css';
+import extractStyles from './ExtractModal.module.css';
 import StickerPeelPreview from './StickerPeelPreview';
-import ExtractModal from './ExtractModal';
 import FeedbackPrompt from './FeedbackPrompt';
 import { extractStickersFromSheet } from '../utils/extractStickers';
 
@@ -109,7 +110,11 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   const stickerInputRef = useRef<HTMLInputElement>(null);
   const touchDragRef = useRef<{ dataURL: string; ghost: HTMLDivElement } | null>(null);
   const [extracting, setExtracting] = useState(false);
-  const [showExtractModal, setShowExtractModal] = useState(false);
+  // ── Add-stickers modal ─────────────────────────────────────────────────
+  const [addModalView, setAddModalView] = useState<'select' | 'extract'>('select');
+  const [extractPreviewUrl, setExtractPreviewUrl] = useState<string | null>(null);
+  const [extractFile, setExtractFile] = useState<File | null>(null);
+  const extractFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -201,6 +206,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     }
   };
 
+  const [showAddModal, setShowAddModal] = useState(false);
   const [printMode, setPrintMode] = useState<'with-tabs' | 'no-tabs'>('with-tabs');
   const [exporting, setExporting] = useState(false);
 
@@ -413,11 +419,120 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
   return (
     <>
-      {showExtractModal && (
-        <ExtractModal
-          onUpload={(file) => { setShowExtractModal(false); handleSheetUpload(file); }}
-          onCancel={() => setShowExtractModal(false)}
-        />
+      {showAddModal && (
+        <div
+          className={styles.addModal}
+          onClick={() => { setShowAddModal(false); setAddModalView('select'); setExtractPreviewUrl(null); setExtractFile(null); }}
+        >
+          <div className={styles.addModalCard} onClick={e => e.stopPropagation()}>
+
+            {/* ── Header ── */}
+            <div className={styles.addModalHeader}>
+              {addModalView === 'extract' && (
+                <button
+                  className={styles.addModalBack}
+                  onClick={() => { setAddModalView('select'); setExtractPreviewUrl(null); setExtractFile(null); }}
+                >
+                  ← Back
+                </button>
+              )}
+              <span className={styles.addModalTitle}>
+                {addModalView === 'select' ? 'Add stickers' : 'Extract from sheet'}
+              </span>
+              <button
+                className={styles.addModalClose}
+                onClick={() => { setShowAddModal(false); setAddModalView('select'); setExtractPreviewUrl(null); setExtractFile(null); }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* ── Selection view ── */}
+            {addModalView === 'select' && (
+              <div className={styles.addModalOptions}>
+                <button
+                  className={styles.addModalOption}
+                  onClick={() => { setShowAddModal(false); stickerInputRef.current?.click(); }}
+                >
+                  <span className={styles.addModalOptionIcon}>🖼️</span>
+                  <span className={styles.addModalOptionTitle}>Upload stickers</span>
+                  <span className={styles.addModalOptionDesc}>Upload one or multiple images as stickers</span>
+                </button>
+                <button
+                  className={`${styles.addModalOption}`}
+                  onClick={() => setAddModalView('extract')}
+                >
+                  <span className={styles.addModalOptionIcon}>✨</span>
+                  <span className={styles.addModalOptionTitle}>Extract from sheet</span>
+                  <span className={styles.addModalOptionDesc}>Upload a sheet and we'll cut out each sticker automatically</span>
+                </button>
+              </div>
+            )}
+
+            {/* ── Extract view ── */}
+            {addModalView === 'extract' && (
+              <div className={extractStyles.body}>
+                <p className={extractStyles.description}>
+                  Upload a photo of your sticker sheet and the app will automatically
+                  cut out each sticker with a transparent background — no editing needed.
+                </p>
+                <ul className={extractStyles.tips}>
+                  <li>Use a sheet with a <strong>white or light background</strong></li>
+                  <li>Make sure stickers have clear, visible edges</li>
+                </ul>
+                <button
+                  className={extractStyles.imageBtn}
+                  onClick={() => extractFileInputRef.current?.click()}
+                  title="Click to upload your sticker sheet"
+                >
+                  <img
+                    src={extractPreviewUrl ?? ExtractExample}
+                    alt=""
+                    className={extractPreviewUrl ? extractStyles.previewImg : extractStyles.placeholderImg}
+                  />
+                  {!extractPreviewUrl && <span className={extractStyles.imageBtnHint}>Click to upload</span>}
+                </button>
+                <input
+                  ref={extractFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setExtractFile(file);
+                    setExtractPreviewUrl(URL.createObjectURL(file));
+                    e.target.value = '';
+                  }}
+                />
+                <div className={extractStyles.buttons}>
+                  <button
+                    className={extractStyles.cancelBtn}
+                    onClick={() => { setShowAddModal(false); setAddModalView('select'); setExtractPreviewUrl(null); setExtractFile(null); }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={extractStyles.uploadBtn}
+                    disabled={!extractFile}
+                    onClick={() => {
+                      if (!extractFile) return;
+                      setShowAddModal(false);
+                      setAddModalView('select');
+                      setExtractPreviewUrl(null);
+                      const file = extractFile;
+                      setExtractFile(null);
+                      handleSheetUpload(file);
+                    }}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
       )}
 
       {/* Toggle button — always fixed top-right */}
@@ -611,9 +726,10 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
             <button
               className={styles.actionBtn}
-              onClick={() => stickerInputRef.current?.click()}
+              onClick={() => setShowAddModal(true)}
+              disabled={extracting}
             >
-              + Add stickers
+              {extracting ? 'Extracting…' : '+ Add stickers'}
             </button>
             <input
               ref={stickerInputRef}
@@ -627,15 +743,6 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                 e.target.value = '';
               }}
             />
-
-            {/* ── Sticker sheet extractor ── */}
-            <button
-              className={`${styles.actionBtn} ${styles.addStickerPackBtn}`}
-              onClick={() => setShowExtractModal(true)}
-              disabled={extracting}
-            >
-              {extracting ? 'Extracting…' : '✦ Extract stickers from sheet'}
-            </button>
 
 
             <br/>

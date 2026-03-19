@@ -73,7 +73,7 @@ export default function FeedbackPrompt({ context = 'general' }: Props) {
 
                 {/* Optional message */}
                 <div className={styles.textSection}>
-                  <p className={styles.textLabel}>tell us more… (optional)</p>
+                  <p className={styles.textLabel}>tell me more… (optional)</p>
                   <textarea
                     className={styles.textarea}
                     placeholder="share a thought…"
