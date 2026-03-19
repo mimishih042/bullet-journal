@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import BackgroundControl from './components/BackgroundControl';
 import MonthTabs from './components/MonthTabs';
 import CalendarCard from './components/CalendarCard';
@@ -37,6 +37,56 @@ export default function App() {
   const [eraserMode, setEraserMode] = useState(false);
   const isNarrow = useIsNarrow();
   const history = useHistory();
+
+  // Pinch-to-zoom: manipulate the journal wrapper DOM directly (no React re-render per frame)
+  const journalRef = useRef<HTMLDivElement>(null);
+  const zoomRef    = useRef({ scale: 1, tx: 0, ty: 0 });
+
+  // Reset zoom when draw mode is turned off; close panel when it turns on
+  useEffect(() => {
+    if (drawMode) {
+      setPanelOpen(false);
+    } else {
+      const el = journalRef.current;
+      if (el) { el.style.transform = ''; el.style.transformOrigin = ''; }
+      zoomRef.current = { scale: 1, tx: 0, ty: 0 };
+    }
+  }, [drawMode]);
+
+  const handlePinch = useCallback((
+    delta: number,
+    prevMidX: number, prevMidY: number,
+    newMidX: number,  newMidY: number,
+  ) => {
+    const el = journalRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect(); // reflects current transform
+    const prev = zoomRef.current;
+
+    const newScale = Math.max(1, Math.min(4, prev.scale * delta));
+
+    if (newScale <= 1) {
+      zoomRef.current = { scale: 1, tx: 0, ty: 0 };
+      el.style.transform = '';
+      el.style.transformOrigin = '';
+      return;
+    }
+
+    // With transform-origin:0 0 and transform:translate(tx,ty) scale(s):
+    //   element top-left in client px = naturalLeft + tx  (rect.left = naturalLeft + tx)
+    // Journal-space coord of prevMidX: (prevMidX - rect.left) / prev.scale
+    // Keep that coord fixed at newMidX after zoom change:
+    const journalX = (prevMidX - rect.left) / prev.scale;
+    const journalY = (prevMidY - rect.top)  / prev.scale;
+    const naturalLeft = rect.left - prev.tx;
+    const naturalTop  = rect.top  - prev.ty;
+    const newTx = newMidX - naturalLeft - journalX * newScale;
+    const newTy = newMidY - naturalTop  - journalY * newScale;
+
+    zoomRef.current = { scale: newScale, tx: newTx, ty: newTy };
+    el.style.transformOrigin = '0 0';
+    el.style.transform = `translate(${newTx}px, ${newTy}px) scale(${newScale})`;
+  }, []);
 
   // Clear history when the user navigates to a different month or year
   useEffect(() => {
@@ -100,7 +150,7 @@ export default function App() {
           </p>
         )}
         <div className={styles.journalArea} id="journal-area">
-          <div className={`${styles.journalWrapper}${drawMode ? ` ${styles.drawModeWrapper}` : ''}`} id="journal-wrapper">
+          <div ref={journalRef} className={`${styles.journalWrapper}${drawMode ? ` ${styles.drawModeWrapper}` : ''}`} id="journal-wrapper">
             <div id="month-tabs">
               <MonthTabs activeMonth={viewMonth} onSelect={setViewMonth} />
             </div>
@@ -115,6 +165,7 @@ export default function App() {
               drawColor={drawColor}
               drawSize={drawSize}
               eraserMode={eraserMode}
+              onPinch={handlePinch}
             />
           </div>
 
@@ -159,7 +210,7 @@ export default function App() {
               onClick={() => setStickersVisible(v => !v)}
               title={stickersVisible ? 'Hide stickers' : 'Show stickers'}
             >
-              {stickersVisible ? '👁 Hide stickers' : '🙈 Unhide stickers'}
+              {stickersVisible ? '👁 Hide stickers' : '🙈 Show stickers'}
             </button>
             <button
               className={`${styles.lockBtn} ${drawMode ? styles.lockBtnOn : ''}`}

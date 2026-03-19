@@ -225,7 +225,8 @@
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ── Journal area — fills remaining space ────────────── */
@@ -279,7 +280,7 @@
 .journalWrapper {
   display: flex;
   flex-direction: column;
-  width: min(1100px, 95%);
+  width: min(1200px, 95%);
 }
 
 /* ── Mobile notice ───────────────────────────────────── */

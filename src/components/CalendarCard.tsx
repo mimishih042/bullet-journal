@@ -21,9 +21,10 @@ interface Props {
   drawColor: string;
   drawSize: number;
   eraserMode: boolean;
+  onPinch?: (delta: number, prevMidX: number, prevMidY: number, newMidX: number, newMidY: number) => void;
 }
 
-export default function CalendarCard({ year, month, onPrevYear, onNextYear, stickersLocked, stickersVisible, drawMode, drawColor, drawSize, eraserMode }: Props) {
+export default function CalendarCard({ year, month, onPrevYear, onNextYear, stickersLocked, stickersVisible, drawMode, drawColor, drawSize, eraserMode, onPinch }: Props) {
   const [placedStickers, setPlacedStickers] = useState<PlacedSticker[]>([]);
   const [stickerDragOver, setStickerDragOver] = useState(false);
   const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
@@ -285,6 +286,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         size={drawSize}
         eraserMode={eraserMode}
         monthKey={monthKey}
+        onPinch={onPinch}
       />
 
       <StickerLayer

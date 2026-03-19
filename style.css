@@ -2,13 +2,14 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
-  overflow-x: hidden; /* prevent horizontal scroll revealing the side panel */
+  overflow: hidden; /* prevent page-level scroll in all directions */
+  height: 100%;
   touch-action: pan-x pan-y; /* block browser pinch-zoom at CSS level without breaking react-easy-crop */
 }
 
 body {
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden; /* page never scrolls; each panel scrolls with its own overflow-y:auto */
   background: var(--color-page-bg);
   font-family: var(--font-sans);
   transition: background var(--duration-xslow);
@@ -28,7 +29,7 @@ body.draw-mode-active * {
   [data-print-hidden] { display: none !important; }
 
   /* Full-bleed print area */
-  body { min-height: unset; }
+  html, body { height: auto; overflow: visible; }
 
   #journal-area {
     flex: 1 !important;

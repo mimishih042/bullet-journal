@@ -45,20 +45,26 @@ interface Props {
   size: number;
   eraserMode: boolean;
   monthKey: string;
+  onPinch?: (delta: number, prevMidX: number, prevMidY: number, newMidX: number, newMidY: number) => void;
 }
 
-export default function DrawingCanvas({ drawMode, color, size, eraserMode, monthKey }: Props) {
+export default function DrawingCanvas({ drawMode, color, size, eraserMode, monthKey, onPinch }: Props) {
   const canvasRef       = useRef<HTMLCanvasElement>(null);
   const strokesRef      = useRef<Stroke[]>([]);
   const currentPtsRef   = useRef<[number, number, number][]>([]);
   const isDrawingRef    = useRef(false);
   const beforeEraseRef  = useRef<Stroke[] | null>(null);
 
+  // Two-finger pinch tracking
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const prevPinchRef      = useRef<{ dist: number; midX: number; midY: number } | null>(null);
+
   // Keep mutable props in refs so event handlers registered once stay current
   const colorRef      = useRef(color);
   const sizeRef       = useRef(size);
   const eraserRef     = useRef(eraserMode);
   const drawModeRef   = useRef(drawMode);
+  const onPinchRef    = useRef(onPinch);
   const historyRef    = useRef(useHistoryContext());
   historyRef.current  = useHistoryContext();
 
@@ -66,6 +72,7 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
   useEffect(() => { sizeRef.current     = size;       }, [size]);
   useEffect(() => { eraserRef.current   = eraserMode; }, [eraserMode]);
   useEffect(() => { drawModeRef.current = drawMode;   }, [drawMode]);
+  useEffect(() => { onPinchRef.current  = onPinch;    }, [onPinch]);
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -88,15 +95,22 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
     document.addEventListener('contextmenu', prevent);
     document.addEventListener('selectstart', prevent);
     document.addEventListener('selectionchange', clearSel);
-    // touchstart { passive: false } lets us preventDefault on iOS long-press / force-touch
-    document.addEventListener('touchstart', prevent, { passive: false });
+
+    // Prevent long-press callout/selection on the canvas ONLY — not on the whole document.
+    // A document-level touchstart preventDefault would block click events on toolbar
+    // buttons (undo, redo, lock, hide) because preventDefault stops the browser from
+    // synthesising click from touch. Canvas touches are safe: touch-action:none means
+    // the browser dispatches pointer events independently of touchstart cancellation.
+    const canvas = canvasRef.current;
+    const preventOnCanvas = (e: TouchEvent) => { if (e.touches.length === 1) e.preventDefault(); };
+    canvas?.addEventListener('touchstart', preventOnCanvas as EventListener, { passive: false });
 
     return () => {
       document.body.classList.remove('draw-mode-active');
       document.removeEventListener('contextmenu', prevent);
       document.removeEventListener('selectstart', prevent);
       document.removeEventListener('selectionchange', clearSel);
-      document.removeEventListener('touchstart', prevent);
+      canvas?.removeEventListener('touchstart', preventOnCanvas as EventListener);
     };
   }, [drawMode]);
 
@@ -134,15 +148,36 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Returns CSS-space coords (pre-DPR). renderStrokes applies ctx.setTransform(dpr,…)
+    // which handles DPR internally. We only need to undo any CSS transform zoom so the
+    // pointer position maps to the canvas's natural CSS layout space.
     const getPoint = (e: PointerEvent): [number, number, number] => {
       const r = canvas.getBoundingClientRect();
-      return [e.clientX - r.left, e.clientY - r.top, e.pressure || 0.5];
+      // cssScale > 1 when a parent transform zooms the canvas visually;
+      // offsetWidth is layout-based and unaffected by CSS transforms.
+      const cssScale = r.width / canvas.offsetWidth;
+      return [
+        (e.clientX - r.left) / cssScale,
+        (e.clientY - r.top)  / cssScale,
+        e.pressure || 0.5,
+      ];
     };
 
     const onPointerDown = (e: PointerEvent) => {
       if (!drawModeRef.current) return;
-      e.preventDefault();
+      // Always capture so we keep events if finger slides outside canvas
       canvas.setPointerCapture(e.pointerId);
+      activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // Two fingers down → pinch mode; cancel any in-progress stroke
+      if (activePointersRef.current.size >= 2) {
+        isDrawingRef.current = false;
+        currentPtsRef.current = [];
+        prevPinchRef.current = null;
+        return;
+      }
+
+      e.preventDefault();
       isDrawingRef.current = true;
 
       if (eraserRef.current) {
@@ -160,7 +195,25 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!drawModeRef.current || !isDrawingRef.current) return;
+      if (!drawModeRef.current) return;
+      activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // Two-finger pinch + pan
+      if (activePointersRef.current.size >= 2) {
+        e.preventDefault();
+        const pts = [...activePointersRef.current.values()];
+        const dist  = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        const midX  = (pts[0].x + pts[1].x) / 2;
+        const midY  = (pts[0].y + pts[1].y) / 2;
+        if (prevPinchRef.current) {
+          const delta = dist / prevPinchRef.current.dist;
+          onPinchRef.current?.(delta, prevPinchRef.current.midX, prevPinchRef.current.midY, midX, midY);
+        }
+        prevPinchRef.current = { dist, midX, midY };
+        return;
+      }
+
+      if (!isDrawingRef.current) return;
       e.preventDefault();
       const [px, py] = getPoint(e);
 
@@ -194,7 +247,10 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
       ctx.fill(new Path2D(getSvgPathFromStroke(outline)));
     };
 
-    const onPointerUp = () => {
+    const onPointerUp = (e: PointerEvent) => {
+      activePointersRef.current.delete(e.pointerId);
+      prevPinchRef.current = null; // reset pinch state whenever a finger lifts
+
       if (!drawModeRef.current || !isDrawingRef.current) return;
       isDrawingRef.current = false;
 
