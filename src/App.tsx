@@ -8,6 +8,8 @@ import { useHistory } from './hooks/useHistory';
 import { HistoryContext } from './context/HistoryContext';
 import UndoIcon from './assets/undo.svg';
 import RedoIcon from './assets/redo.svg';
+import EraserIcon from './assets/eraser.svg'
+import EraserWhiteIcon from './assets/eraser-white.svg'
 
 const today = new Date();
 const todayKey = today.toISOString().split('T')[0];
@@ -24,15 +26,15 @@ function useIsNarrow(breakpoint = 1000) {
 }
 
 export default function App() {
-  const [viewYear,   setViewYear]   = useState(today.getFullYear());
-  const [viewMonth,  setViewMonth]  = useState(today.getMonth());
-  const [panelOpen,        setPanelOpen]        = useState(true);
-  const [stickersLocked,   setStickersLocked]   = useState(false);
-  const [stickersVisible,  setStickersVisible]  = useState(true);
-  const [drawMode,       setDrawMode]       = useState(false);
-  const [drawColor,      setDrawColor]      = useState('#1a1a1a');
-  const [drawSize,       setDrawSize]       = useState(4);
-  const [eraserMode,     setEraserMode]     = useState(false);
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [stickersLocked, setStickersLocked] = useState(false);
+  const [stickersVisible, setStickersVisible] = useState(true);
+  const [drawMode, setDrawMode] = useState(false);
+  const [drawColor, setDrawColor] = useState('#1a1a1a');
+  const [drawSize, setDrawSize] = useState(4);
+  const [eraserMode, setEraserMode] = useState(false);
   const isNarrow = useIsNarrow();
   const history = useHistory();
 
@@ -54,10 +56,10 @@ export default function App() {
   }, [history.undo, history.redo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const historyValue = useMemo(() => ({
-    push:    history.push,
-    undo:    history.undo,
-    redo:    history.redo,
-    clear:   history.clear,
+    push: history.push,
+    undo: history.undo,
+    redo: history.redo,
+    clear: history.clear,
     canUndo: history.canUndo,
     canRedo: history.canRedo,
   }), [history.push, history.undo, history.redo, history.clear, history.canUndo, history.canRedo]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -91,114 +93,116 @@ export default function App() {
 
   return (
     <HistoryContext.Provider value={historyValue}>
-    <div className={styles.pageRoot}>
-      {showNudge && (
-        <p className={styles.nudge} data-print-hidden>
-          ✦ Welcome back ✦
-        </p>
-      )}
-      <div className={styles.journalArea} id="journal-area">
-        <div className={styles.journalWrapper} id="journal-wrapper">
-          <div id="month-tabs">
-            <MonthTabs activeMonth={viewMonth} onSelect={setViewMonth} />
-          </div>
-          <CalendarCard
-            year={viewYear}
-            month={viewMonth}
-            onPrevYear={() => setViewYear(y => y - 1)}
-            onNextYear={() => setViewYear(y => y + 1)}
-            stickersLocked={stickersLocked}
-            stickersVisible={stickersVisible}
-            drawMode={drawMode}
-            drawColor={drawColor}
-            drawSize={drawSize}
-            eraserMode={eraserMode}
-          />
-        </div>
-
-        <footer className={styles.footer} data-print-hidden>
-          <div className={styles.footerCopy}>© 2026 Mimi Shih</div>
-          <a href="https://instagram.com/mimishih_design" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>
-            ✦ Follow my art on Instagram
-          </a>
-        </footer>
-      </div>
-
-      <BackgroundControl
-        open={panelOpen}
-        onToggle={() => setPanelOpen(o => !o)}
-        year={viewYear}
-        month={viewMonth}
-      />
-
-      <div data-print-hidden>
-        <div className={styles.actionContainer}>
-          <button
-            className={styles.undoBtn}
-            onClick={history.undo}
-            disabled={!history.canUndo}
-            title="Undo (⌘Z)"
-          ><img src={UndoIcon} alt="Undo" className={styles.undoIcon}/></button>
-          <button
-            className={styles.undoBtn}
-            onClick={history.redo}
-            disabled={!history.canRedo}
-            title="Redo (⌘⇧Z)"
-          ><img src={RedoIcon} alt="Redo" className={styles.undoIcon}/></button>
-          <button
-            className={`${styles.lockBtn} ${stickersLocked ? styles.lockBtnOn : ''}`}
-            onClick={() => setStickersLocked(l => !l)}
-            title={stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
-          >
-            {stickersLocked ? '🔒 Unlock stickers' : '🔓 Lock stickers'}
-          </button>
-          <button
-            className={`${styles.lockBtn} ${!stickersVisible ? styles.lockBtnOn : ''}`}
-            onClick={() => setStickersVisible(v => !v)}
-            title={stickersVisible ? 'Hide stickers' : 'Show stickers'}
-          >
-            {stickersVisible ? '👁 Hide stickers' : '🙈 Unhide stickers'}
-          </button>
-          <button
-            className={`${styles.lockBtn} ${drawMode ? styles.lockBtnOn : ''}`}
-            onClick={() => { setDrawMode(d => !d); setEraserMode(false); }}
-            title={drawMode ? 'Exit draw mode' : 'Draw mode'}
-          >
-            ✏️ Draw
-          </button>
-        </div>
-
-        {drawMode && (
-          <div className={styles.drawToolbar} data-print-hidden>
-            <div className={styles.drawColors}>
-              <input
-                type="color"
-                className={`${styles.colorPickerInput} ${!eraserMode ? styles.colorPickerActive : ''}`}
-                value={drawColor}
-                onChange={e => { setDrawColor(e.target.value); setEraserMode(false); }}
-                title="Custom color"
-              />
-            </div>
-            <input
-              type="range"
-              className={styles.sizeSlider}
-              min={2}
-              max={24}
-              value={drawSize}
-              onChange={e => setDrawSize(Number(e.target.value))}
-              title={`Brush size: ${drawSize}`}
-            />
-            <button
-              className={`${styles.lockBtn} ${eraserMode ? styles.lockBtnOn : ''}`}
-              onClick={() => setEraserMode(e => !e)}
-              title="Eraser"
-            >
-              ◎ Eraser
-            </button>
-          </div>
+      <div className={styles.pageRoot}>
+        {showNudge && (
+          <p className={styles.nudge} data-print-hidden>
+            ✦ Welcome back ✦
+          </p>
         )}
+        <div className={styles.journalArea} id="journal-area">
+          <div className={`${styles.journalWrapper}${drawMode ? ` ${styles.drawModeWrapper}` : ''}`} id="journal-wrapper">
+            <div id="month-tabs">
+              <MonthTabs activeMonth={viewMonth} onSelect={setViewMonth} />
+            </div>
+            <CalendarCard
+              year={viewYear}
+              month={viewMonth}
+              onPrevYear={() => setViewYear(y => y - 1)}
+              onNextYear={() => setViewYear(y => y + 1)}
+              stickersLocked={stickersLocked}
+              stickersVisible={stickersVisible}
+              drawMode={drawMode}
+              drawColor={drawColor}
+              drawSize={drawSize}
+              eraserMode={eraserMode}
+            />
+          </div>
+
+          <footer className={styles.footer} data-print-hidden>
+            <div className={styles.footerCopy}>© 2026 Mimi Shih</div>
+            <a href="https://instagram.com/mimishih_design" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>
+              ✦ Follow my art on Instagram
+            </a>
+          </footer>
+        </div>
+
+        <BackgroundControl
+          open={panelOpen}
+          onToggle={() => setPanelOpen(o => !o)}
+          year={viewYear}
+          month={viewMonth}
+        />
+
+        <div data-print-hidden>
+          <div className={styles.actionContainer}>
+            <button
+              className={styles.undoBtn}
+              onClick={history.undo}
+              disabled={!history.canUndo}
+              title="Undo (⌘Z)"
+            ><img src={UndoIcon} alt="Undo" className={styles.undoIcon} /></button>
+            <button
+              className={styles.undoBtn}
+              onClick={history.redo}
+              disabled={!history.canRedo}
+              title="Redo (⌘⇧Z)"
+            ><img src={RedoIcon} alt="Redo" className={styles.undoIcon} /></button>
+            <button
+              className={`${styles.lockBtn} ${stickersLocked ? styles.lockBtnOn : ''}`}
+              onClick={() => setStickersLocked(l => !l)}
+              title={stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
+            >
+              {stickersLocked ? '🔒 Unlock stickers' : '🔓 Lock stickers'}
+            </button>
+            <button
+              className={`${styles.lockBtn} ${!stickersVisible ? styles.lockBtnOn : ''}`}
+              onClick={() => setStickersVisible(v => !v)}
+              title={stickersVisible ? 'Hide stickers' : 'Show stickers'}
+            >
+              {stickersVisible ? '👁 Hide stickers' : '🙈 Unhide stickers'}
+            </button>
+            <button
+              className={`${styles.lockBtn} ${drawMode ? styles.lockBtnOn : ''}`}
+              onClick={() => { setDrawMode(d => !d); setEraserMode(false); }}
+              title={drawMode ? 'Exit draw mode' : 'Draw mode'}
+            >
+              ✏️ Draw
+            </button>
+
+            {drawMode && (
+              <div className={styles.drawToolbar}>
+                <input
+                  type="color"
+                  className={`${styles.colorPickerInput} ${!eraserMode ? styles.colorPickerActive : ''}`}
+                  value={drawColor}
+                  onChange={e => { setDrawColor(e.target.value); setEraserMode(false); }}
+                  title="Custom color"
+                />
+                <input
+                  type="range"
+                  className={styles.sizeSlider}
+                  min={2}
+                  max={18}
+                  value={drawSize}
+                  onChange={e => setDrawSize(Number(e.target.value))}
+                  title={`Brush size: ${drawSize}`}
+                />
+                <button
+                  className={`${styles.eraserBtn} ${eraserMode ? styles.eraserBtnOn : ''}`}
+                  onClick={() => setEraserMode(e => !e)}
+                  title="Eraser"
+                >
+                  {
+                    eraserMode ?
+                      <img src={EraserWhiteIcon} alt='Erase' className={styles.undoIcon} /> :
+                      <img src={EraserIcon} alt='Erase' className={styles.undoIcon} />
+                  }
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
     </HistoryContext.Provider>
   );
 }

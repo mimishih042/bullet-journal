@@ -1,6 +1,12 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 
 // ── Schema ────────────────────────────────────────────
+interface DrawingStroke {
+  points: [number, number, number][];
+  color: string;
+  size: number;
+}
+
 interface JournalDB extends DBSchema {
   photos: {
     key: string;
@@ -18,10 +24,14 @@ interface JournalDB extends DBSchema {
     key: string;
     value: { key: string; stickers: PlacedSticker[] };
   };
+  drawings: {
+    key: string;
+    value: { key: string; strokes: DrawingStroke[] };
+  };
 }
 
 const DB_NAME    = 'bullet-journal';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 const dbPromise: Promise<IDBPDatabase<JournalDB>> = openDB<JournalDB>(DB_NAME, DB_VERSION, {
   upgrade(db, oldVersion) {
@@ -37,6 +47,10 @@ const dbPromise: Promise<IDBPDatabase<JournalDB>> = openDB<JournalDB>(DB_NAME, D
       db.deleteObjectStore('placed-stickers');
     if (!db.objectStoreNames.contains('placed-stickers'))
       db.createObjectStore('placed-stickers', { keyPath: 'key' });
+
+    // v5: drawing strokes per month
+    if (!db.objectStoreNames.contains('drawings'))
+      db.createObjectStore('drawings', { keyPath: 'key' });
   },
 
   blocked() {
@@ -123,4 +137,16 @@ export async function loadPlacedStickers(monthKey: string): Promise<PlacedSticke
   const db = await dbPromise;
   const record = await db.get('placed-stickers', monthKey);
   return record?.stickers ?? [];
+}
+
+// ── Drawing strokes (per month) ───────────────────────
+export async function saveDrawingStrokes(monthKey: string, strokes: DrawingStroke[]): Promise<void> {
+  const db = await dbPromise;
+  await db.put('drawings', { key: monthKey, strokes });
+}
+
+export async function loadDrawingStrokes(monthKey: string): Promise<DrawingStroke[]> {
+  const db = await dbPromise;
+  const record = await db.get('drawings', monthKey);
+  return record?.strokes ?? [];
 }

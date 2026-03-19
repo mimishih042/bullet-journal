@@ -95,23 +95,14 @@
 
 /* ── Draw toolbar ────────────────────────────────────── */
 .drawToolbar {
-  position: fixed;
-  top: 58px;
-  left: 14px;
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  z-index: var(--z-top);
+  height: 32px;
   background: var(--color-surface-card);
   border: 1px solid var(--color-border);
   border-radius: var(--space-3);
-  padding: 6px 10px;
-}
-
-.drawColors {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
+  padding: 0 2px 0 8px;
 }
 
 .colorBtn {
@@ -168,6 +159,39 @@
   border-color: var(--color-ink);
   outline: 2px solid var(--color-surface-card);
   outline-offset: -3px;
+}
+
+.eraserBtn {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  width: 26px;
+  height: 26px;
+  border-radius: var(--space-2);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-card);
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background var(--duration-base);
+}
+
+.eraserBtn:hover {
+  background: var(--color-surface-hover);
+}
+
+.eraserBtnOn {
+  background: var(--color-ink);
+  color: var(--color-surface-paper);
+  border-color: var(--color-ink);
+}
+
+.eraserBtnOn:hover {
+  background: var(--color-ink);
+  opacity: 0.85;
 }
 
 .sizeSlider {
@@ -245,6 +269,13 @@
 }
 
 /* ── Journal wrapper — constrained width ─────────────── */
+.drawModeWrapper,
+.drawModeWrapper * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
 .journalWrapper {
   display: flex;
   flex-direction: column;

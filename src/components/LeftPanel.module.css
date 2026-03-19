@@ -93,3 +93,8 @@
   outline: none;
   transition: background var(--duration-base), box-shadow var(--duration-base);
 }
+
+.textarea:disabled {
+  cursor: default;
+  pointer-events: none;
+}

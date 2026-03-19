@@ -267,6 +267,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         month={month}
         onPrevYear={onPrevYear}
         onNextYear={onNextYear}
+        drawMode={drawMode}
       />
 
       <div className={styles.rightPanel}>

@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import getStroke from 'perfect-freehand';
 import { useHistoryContext } from '../context/HistoryContext';
+import { saveDrawingStrokes, loadDrawingStrokes } from '../storage';
 import styles from './DrawingCanvas.module.css';
 
 export type Stroke = {
@@ -73,10 +74,30 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
     if (ctx) renderStrokes(ctx, strokesRef.current);
   }, []);
 
-  // Clear strokes when month changes
+  // Suppress browser selection / callout / context-menu while drawing
+  useEffect(() => {
+    if (!drawMode) return;
+    const prevent = (e: Event) => e.preventDefault();
+    document.addEventListener('contextmenu', prevent);
+    document.addEventListener('selectstart', prevent);
+    return () => {
+      document.removeEventListener('contextmenu', prevent);
+      document.removeEventListener('selectstart', prevent);
+    };
+  }, [drawMode]);
+
+  // Keep monthKey in a ref so save callbacks always use the current key
+  const monthKeyRef = useRef(monthKey);
+  useEffect(() => { monthKeyRef.current = monthKey; }, [monthKey]);
+
+  // Load strokes from DB when month changes (clears canvas first)
   useEffect(() => {
     strokesRef.current = [];
     redraw();
+    loadDrawingStrokes(monthKey).then(loaded => {
+      strokesRef.current = loaded as Stroke[];
+      redraw();
+    });
   }, [monthKey, redraw]);
 
   // Sync canvas physical size to its CSS size, preserving DPR
@@ -168,9 +189,10 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
         beforeEraseRef.current = null;
         if (before && before.length !== strokesRef.current.length) {
           const after = [...strokesRef.current];
+          saveDrawingStrokes(monthKeyRef.current, after);
           historyRef.current.push({
-            undo: () => { strokesRef.current = before; redraw(); },
-            redo: () => { strokesRef.current = after;  redraw(); },
+            undo: () => { strokesRef.current = before; redraw(); saveDrawingStrokes(monthKeyRef.current, before); },
+            redo: () => { strokesRef.current = after;  redraw(); saveDrawingStrokes(monthKeyRef.current, after);  },
           });
         }
         return;
@@ -188,10 +210,11 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
       strokesRef.current = next;
       currentPtsRef.current = [];
       redraw();
+      saveDrawingStrokes(monthKeyRef.current, next);
 
       historyRef.current.push({
-        undo: () => { strokesRef.current = prev; redraw(); },
-        redo: () => { strokesRef.current = next; redraw(); },
+        undo: () => { strokesRef.current = prev; redraw(); saveDrawingStrokes(monthKeyRef.current, prev); },
+        redo: () => { strokesRef.current = next; redraw(); saveDrawingStrokes(monthKeyRef.current, next); },
       });
     };
 

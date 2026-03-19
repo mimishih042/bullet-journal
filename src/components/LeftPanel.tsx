@@ -19,6 +19,7 @@ interface Props {
   month: number;
   onPrevYear: () => void;
   onNextYear: () => void;
+  drawMode?: boolean;
 }
 
 function panelKey(year: number, month: number, field: string) {
@@ -40,7 +41,7 @@ function useLocalText(key: string) {
   return [value, set] as const;
 }
 
-export default function LeftPanel({ year, month, onPrevYear, onNextYear }: Props) {
+export default function LeftPanel({ year, month, onPrevYear, onNextYear, drawMode = false }: Props) {
   const [notes, setNotes] = useLocalText(panelKey(year, month, 'notes'));
   const [notePaper, setNotePaper] = useState<NotePaper>(
     () => (localStorage.getItem('note-paper') as NotePaper) ?? 'grid'
@@ -71,6 +72,7 @@ export default function LeftPanel({ year, month, onPrevYear, onNextYear }: Props
           placeholder="anything on your mind..."
           value={notes}
           onChange={e => setNotes(e.target.value)}
+          disabled={drawMode}
         />
       </div>
     </div>
