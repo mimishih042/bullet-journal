@@ -5,6 +5,7 @@ import CalendarGrid from './CalendarGrid';
 import StickerLayer from './StickerLayer';
 import { loadPlacedStickers, savePlacedStickers } from '../storage';
 import type { PlacedSticker } from '../storage';
+import { useHistoryContext } from '../context/HistoryContext';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -23,6 +24,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
   const cardRef = useRef<HTMLDivElement>(null);
   const monthKey = `placed-${year}-${month}`;
   const placedStickersRef = useRef(placedStickers);
+  const history = useHistoryContext();
 
   useLayoutEffect(() => {
     if (!cardRef.current) return;
@@ -74,13 +76,28 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         const updated = [...placedStickersRef.current, newSticker];
         setPlacedStickers(updated);
         savePlacedStickers(monthKey, updated);
+
+        const addedId = newSticker.id;
+        const key = monthKey;
+        history.push({
+          undo: () => setPlacedStickers(curr => {
+            const u = curr.filter(s => s.id !== addedId);
+            savePlacedStickers(key, u);
+            return u;
+          }),
+          redo: () => setPlacedStickers(curr => {
+            const u = [...curr, newSticker];
+            savePlacedStickers(key, u);
+            return u;
+          }),
+        });
       };
       img.src = dataURL;
     };
 
     document.addEventListener('sticker-touch-drop', handleTouchDrop);
     return () => document.removeEventListener('sticker-touch-drop', handleTouchDrop);
-  }, [monthKey]); // monthKey is the only dependency — sticker state is read via ref
+  }, [monthKey]); // history.push is stable (useCallback [])
 
   const handleDragOver = (e: React.DragEvent) => {
     if (e.dataTransfer.types.includes('sticker-data')) {
@@ -90,7 +107,6 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // only clear if leaving the card entirely
     if (!cardRef.current?.contains(e.relatedTarget as Node)) {
       setStickerDragOver(false);
     }
@@ -110,13 +126,13 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
     const pixelX = e.clientX - rect.left;
     const pixelY = e.clientY - rect.top;
 
-    // Read natural dimensions so non-square stickers aren't forced into a square box
     const img = new Image();
     img.onload = () => {
-      const fracW  = 80 / rect.width;
-      const fracH  = fracW * (img.naturalHeight / img.naturalWidth);
+      const fracW    = 80 / rect.width;
+      const fracH    = fracW * (img.naturalHeight / img.naturalWidth);
       const halfPixH = (fracH * rect.width) / 2;
 
+      // Capture prev state inside onload via ref (avoids stale closure on async boundary)
       const newSticker: PlacedSticker = {
         id: crypto.randomUUID(),
         stickerDataURL: dataURL,
@@ -125,32 +141,95 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         width:  fracW,
         height: fracH,
         rotation: 0,
-        zIndex: nextZIndex(placedStickers),
+        zIndex: nextZIndex(placedStickersRef.current),
       };
 
-      const updated = [...placedStickers, newSticker];
+      const updated = [...placedStickersRef.current, newSticker];
       setPlacedStickers(updated);
       savePlacedStickers(monthKey, updated);
+
+      const addedId = newSticker.id;
+      const key = monthKey;
+      history.push({
+        undo: () => setPlacedStickers(curr => {
+          const u = curr.filter(s => s.id !== addedId);
+          savePlacedStickers(key, u);
+          return u;
+        }),
+        redo: () => setPlacedStickers(curr => {
+          const u = [...curr, newSticker];
+          savePlacedStickers(key, u);
+          return u;
+        }),
+      });
     };
     img.src = dataURL;
   };
 
   const handleStickerMove = (id: string, x: number, y: number) => {
+    const prev = placedStickers.find(s => s.id === id);
+    const prevX = prev?.x ?? x, prevY = prev?.y ?? y;
+    const key = monthKey;
     const updated = placedStickers.map(s => s.id === id ? { ...s, x, y } : s);
     setPlacedStickers(updated);
     savePlacedStickers(monthKey, updated);
+    history.push({
+      undo: () => setPlacedStickers(curr => {
+        const u = curr.map(s => s.id === id ? { ...s, x: prevX, y: prevY } : s);
+        savePlacedStickers(key, u);
+        return u;
+      }),
+      redo: () => setPlacedStickers(curr => {
+        const u = curr.map(s => s.id === id ? { ...s, x, y } : s);
+        savePlacedStickers(key, u);
+        return u;
+      }),
+    });
   };
 
   const handleStickerDelete = (id: string) => {
+    const deleted = placedStickers.find(s => s.id === id);
+    if (!deleted) return;
+    const key = monthKey;
     const updated = placedStickers.filter(s => s.id !== id);
     setPlacedStickers(updated);
     savePlacedStickers(monthKey, updated);
+    history.push({
+      undo: () => setPlacedStickers(curr => {
+        const u = [...curr, deleted];
+        savePlacedStickers(key, u);
+        return u;
+      }),
+      redo: () => setPlacedStickers(curr => {
+        const u = curr.filter(s => s.id !== id);
+        savePlacedStickers(key, u);
+        return u;
+      }),
+    });
   };
 
   const handleStickerUpdate = (id: string, patch: Partial<PlacedSticker>) => {
+    const prev = placedStickers.find(s => s.id === id);
+    if (!prev) return;
+    const prevPatch = Object.fromEntries(
+      Object.keys(patch).map(k => [k, (prev as unknown as Record<string, unknown>)[k]])
+    ) as Partial<PlacedSticker>;
+    const key = monthKey;
     const updated = placedStickers.map(s => s.id === id ? { ...s, ...patch } : s);
     setPlacedStickers(updated);
     savePlacedStickers(monthKey, updated);
+    history.push({
+      undo: () => setPlacedStickers(curr => {
+        const u = curr.map(s => s.id === id ? { ...s, ...prevPatch } : s);
+        savePlacedStickers(key, u);
+        return u;
+      }),
+      redo: () => setPlacedStickers(curr => {
+        const u = curr.map(s => s.id === id ? { ...s, ...patch } : s);
+        savePlacedStickers(key, u);
+        return u;
+      }),
+    });
   };
 
   const handleBringToFront = (id: string) => {
@@ -160,6 +239,8 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
       savePlacedStickers(monthKey, updated);
       return updated;
     });
+    // Intentionally not recorded in history — z-index reordering is a UX convenience,
+    // not a meaningful state change the user would want to undo.
   };
 
   return (

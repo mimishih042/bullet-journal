@@ -3,6 +3,7 @@ import { heicTo, isHeic } from 'heic-to';
 import styles from './CalendarCell.module.css';
 import { savePhoto, loadPhoto, deletePhoto } from '../storage';
 import CropModal from './CropModal';
+import { useHistoryContext } from '../context/HistoryContext';
 
 interface Props {
   day: number;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Props) {
+  const history = useHistoryContext();
   const [photoURL,   setPhotoURL]   = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   // null = closed, 'loading' = open + converting, string = open + ready
@@ -58,10 +60,23 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
 
   const handleCropConfirm = async (croppedDataURL: string) => {
     if (!dateKey) return;
+    const prev = photoURL;
+    const key  = dateKey;
     setPendingImage(null);
     setPhotoURL(croppedDataURL);
     await savePhoto(dateKey, croppedDataURL);
     if (isToday) window.dispatchEvent(new CustomEvent('today-photo-saved'));
+    history.push({
+      undo: async () => {
+        if (prev) { setPhotoURL(prev);  await savePhoto(key, prev); }
+        else      { setPhotoURL(null);  await deletePhoto(key); }
+        // Note: today-photo-saved is intentionally NOT re-dispatched on undo
+      },
+      redo: async () => {
+        setPhotoURL(croppedDataURL);
+        await savePhoto(key, croppedDataURL);
+      },
+    });
   };
 
   const handleCropCancel = () => {
@@ -70,9 +85,15 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
 
   const handleRemovePhoto = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!dateKey) return;
+    if (!dateKey || !photoURL) return;
+    const prev = photoURL;
+    const key  = dateKey;
     setPhotoURL(null);
     await deletePhoto(dateKey);
+    history.push({
+      undo: async () => { setPhotoURL(prev);  await savePhoto(key, prev); },
+      redo: async () => { setPhotoURL(null);  await deletePhoto(key); },
+    });
   };
 
   const handleCellClick = () => {

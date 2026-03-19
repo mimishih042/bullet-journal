@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import BackgroundControl from './components/BackgroundControl';
 import MonthTabs from './components/MonthTabs';
 import CalendarCard from './components/CalendarCard';
 import { loadPhoto } from './storage';
 import styles from './App.module.css';
+import { useHistory } from './hooks/useHistory';
+import { HistoryContext } from './context/HistoryContext';
 
 const today = new Date();
 const todayKey = today.toISOString().split('T')[0];
@@ -25,6 +27,33 @@ export default function App() {
   const [panelOpen,      setPanelOpen]      = useState(true);
   const [stickersLocked, setStickersLocked] = useState(false);
   const isNarrow = useIsNarrow();
+  const history = useHistory();
+
+  // Clear history when the user navigates to a different month or year
+  useEffect(() => {
+    history.clear();
+  }, [viewYear, viewMonth, history.clear]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keyboard shortcuts: Cmd/Ctrl+Z = undo, Cmd/Ctrl+Shift+Z or Ctrl+Y = redo
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      if (!e.shiftKey && e.key === 'z') { e.preventDefault(); history.undo(); }
+      else if ((e.shiftKey && e.key === 'z') || e.key === 'y') { e.preventDefault(); history.redo(); }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [history.undo, history.redo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const historyValue = useMemo(() => ({
+    push:    history.push,
+    undo:    history.undo,
+    redo:    history.redo,
+    clear:   history.clear,
+    canUndo: history.canUndo,
+    canRedo: history.canRedo,
+  }), [history.push, history.undo, history.redo, history.clear, history.canUndo, history.canRedo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const [installed,     setInstalled]     = useState(false);
@@ -71,6 +100,7 @@ export default function App() {
   }
 
   return (
+    <HistoryContext.Provider value={historyValue}>
     <div className={styles.pageRoot}>
       {showNudge && (
         <p className={styles.nudge} data-print-hidden>
@@ -113,6 +143,18 @@ export default function App() {
           </button>
         )}
         <button
+          className={styles.undoBtn}
+          onClick={history.undo}
+          disabled={!history.canUndo}
+          title="Undo (⌘Z)"
+        >↩</button>
+        <button
+          className={styles.undoBtn}
+          onClick={history.redo}
+          disabled={!history.canRedo}
+          title="Redo (⌘⇧Z)"
+        >↪</button>
+        <button
           className={`${styles.lockBtn} ${stickersLocked ? styles.lockBtnOn : ''}`}
           onClick={() => setStickersLocked(l => !l)}
           title={stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
@@ -121,5 +163,6 @@ export default function App() {
         </button>
       </div>
     </div>
+    </HistoryContext.Provider>
   );
 }

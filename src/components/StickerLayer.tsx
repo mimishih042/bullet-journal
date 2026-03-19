@@ -89,8 +89,9 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
       setPos({ x: sticker.x * cardWidth, y: sticker.y * cardHeight });
       setStickerW(sticker.width  * cardWidth);
       setStickerH(sticker.height * cardWidth);
+      setRotation(sticker.rotation ?? 0);
     }
-  }, [cardWidth, cardHeight, sticker.x, sticker.y, sticker.width, sticker.height]);
+  }, [cardWidth, cardHeight, sticker.x, sticker.y, sticker.width, sticker.height, sticker.rotation]);
 
   // Deselect when tapping/clicking outside this sticker.
   // Capture phase ensures child stopPropagation doesn't prevent it.

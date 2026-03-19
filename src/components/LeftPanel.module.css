@@ -8,7 +8,7 @@
   gap: var(--space-8);
   overflow-y: auto;
   background-color: var(--color-surface-paper);
-  background-image: var(--bg-grid);
+  background-image: var(--bg-dots);
   background-size: var(--bg-grid-size);
 }
 

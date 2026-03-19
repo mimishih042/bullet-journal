@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toPng } from 'html-to-image';
 import { saveSetting, loadSetting, saveStickerItem, loadAllStickers, deleteStickerItem } from '../storage';
 import type { StickerItem } from '../storage';
@@ -6,6 +6,7 @@ import EditIcon from '../assets/edit.svg'
 import ExtractExample from '../assets/extract-example.png';
 import styles from './BackgroundControl.module.css';
 import extractStyles from './ExtractModal.module.css';
+import { useHistoryContext } from '../context/HistoryContext';
 import StickerPeelPreview from './StickerPeelPreview';
 import FeedbackPrompt from './FeedbackPrompt';
 import { extractStickersFromSheet } from '../utils/extractStickers';
@@ -104,11 +105,14 @@ interface Props {
 }
 
 export default function BackgroundControl({ open, onToggle, year, month }: Props) {
+  const history = useHistoryContext();
   const [bgColor, setBgColor] = useState('#ece7df');
   const [stickerPack, setStickerPack] = useState<StickerItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const stickerInputRef = useRef<HTMLInputElement>(null);
   const touchDragRef = useRef<{ dataURL: string; ghost: HTMLDivElement } | null>(null);
+  const currentBgRef = useRef<{ type: 'color' | 'image'; value: string }>({ type: 'color', value: '#ece7df' });
+  const colorPickerBaseRef = useRef('#ece7df');
   const [extracting, setExtracting] = useState(false);
   // ── Add-stickers modal ─────────────────────────────────────────────────
   const [addModalView, setAddModalView] = useState<'select' | 'extract'>('select');
@@ -124,8 +128,11 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
         document.body.style.backgroundImage = 'none';
         document.body.style.backgroundColor = value;
         setBgColor(value);
+        currentBgRef.current = { type: 'color', value };
+        colorPickerBaseRef.current = value;
       } else if (type === 'image' && value) {
         document.body.style.background = `url(${value}) center/cover no-repeat fixed`;
+        currentBgRef.current = { type: 'image', value };
       }
     })();
   }, []);
@@ -134,21 +141,40 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     loadAllStickers().then(setStickerPack);
   }, []);
 
+  const applyBg = useCallback(async (bg: { type: 'color' | 'image'; value: string }) => {
+    if (bg.type === 'color') {
+      setBgColor(bg.value);
+      document.body.style.backgroundImage = 'none';
+      document.body.style.backgroundColor = bg.value;
+      await saveSetting('bg-type', 'color');
+      await saveSetting('bg-value', bg.value);
+    } else {
+      document.body.style.background = `url(${bg.value}) center/cover no-repeat fixed`;
+      await saveSetting('bg-type', 'image');
+      await saveSetting('bg-value', bg.value);
+    }
+    currentBgRef.current = bg;
+  }, []);
+
   const applyColor = async (color: string) => {
     setBgColor(color);
     document.body.style.backgroundImage = 'none';
     document.body.style.backgroundColor = color;
     await saveSetting('bg-type', 'color');
     await saveSetting('bg-value', color);
+    currentBgRef.current = { type: 'color', value: color };
   };
 
   const applyImageFile = (file: File) => {
+    const prev = { ...currentBgRef.current };
     const reader = new FileReader();
     reader.onload = async e => {
       const url = e.target!.result as string;
-      document.body.style.background = `url(${url}) center/cover no-repeat fixed`;
-      await saveSetting('bg-type', 'image');
-      await saveSetting('bg-value', url);
+      await applyBg({ type: 'image', value: url });
+      history.push({
+        undo: () => applyBg(prev),
+        redo: () => applyBg({ type: 'image', value: url }),
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -568,7 +594,18 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               <input
                 type="color"
                 value={bgColor}
+                onFocus={() => { colorPickerBaseRef.current = currentBgRef.current.value; }}
                 onChange={e => applyColor(e.target.value)}
+                onBlur={e => {
+                  const next = e.target.value;
+                  const base = colorPickerBaseRef.current;
+                  if (next !== base) {
+                    history.push({
+                      undo: () => applyBg({ type: 'color', value: base }),
+                      redo: () => applyBg({ type: 'color', value: next }),
+                    });
+                  }
+                }}
               />
             </label>
             <button

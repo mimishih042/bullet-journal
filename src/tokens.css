@@ -49,6 +49,7 @@
     linear-gradient(var(--color-grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
   --bg-grid-size:         14px 14px;
+  --bg-dots: radial-gradient(circle, var(--color-grid-line) 1px, transparent 1px);
 
   /* ─── Spacing ────────────────────────────────────── */
   --space-1:   3px;
