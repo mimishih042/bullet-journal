@@ -637,7 +637,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                         <StickerPeelPreview src={sticker.dataURL} filterId={`fav-${sticker.id}`} />
                       )}
                       <button
-                        className={`${styles.favoriteBtn} ${styles.favoriteBtnActive}`}
+                        className={`${styles.favoriteBtn} ${isEditingStickers && styles.favoriteBtnEditing} ${styles.favoriteBtnActive}`}
                         onClick={isEditingStickers ? e => { e.stopPropagation(); toggleFavorite(sticker.id); } : undefined}
                         style={isEditingStickers ? undefined : { pointerEvents: 'none' }}
                         title={isEditingStickers ? 'Remove from favorites' : undefined}
@@ -698,7 +698,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                     )}
                     {(isEditingStickers || sticker.isFavorite) && (
                       <button
-                        className={`${styles.favoriteBtn} ${sticker.isFavorite ? styles.favoriteBtnActive : ''}`}
+                        className={`${styles.favoriteBtn} ${isEditingStickers && styles.favoriteBtnEditing} ${sticker.isFavorite ? styles.favoriteBtnActive : ''}`}
                         onClick={isEditingStickers ? e => { e.stopPropagation(); toggleFavorite(sticker.id); } : undefined}
                         style={isEditingStickers ? undefined : { pointerEvents: 'none' }}
                         title={isEditingStickers ? (sticker.isFavorite ? 'Remove from favorites' : 'Add to favorites') : undefined}
