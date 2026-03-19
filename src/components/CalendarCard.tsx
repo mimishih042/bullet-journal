@@ -15,15 +15,17 @@ interface Props {
   onPrevYear: () => void;
   onNextYear: () => void;
   stickersLocked: boolean;
+  stickersVisible: boolean;
 }
 
-export default function CalendarCard({ year, month, onPrevYear, onNextYear, stickersLocked }: Props) {
+export default function CalendarCard({ year, month, onPrevYear, onNextYear, stickersLocked, stickersVisible }: Props) {
   const [placedStickers, setPlacedStickers] = useState<PlacedSticker[]>([]);
   const [stickerDragOver, setStickerDragOver] = useState(false);
   const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const monthKey = `placed-${year}-${month}`;
   const placedStickersRef = useRef(placedStickers);
+  const stickersVisibleRef = useRef(stickersVisible);
   const history = useHistoryContext();
 
   useLayoutEffect(() => {
@@ -36,8 +38,9 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
     return () => observer.disconnect();
   }, []);
 
-  // keep ref in sync so the touch-drop handler always sees fresh state
+  // keep refs in sync so native event callbacks always see fresh state
   useEffect(() => { placedStickersRef.current = placedStickers; }, [placedStickers]);
+  useEffect(() => { stickersVisibleRef.current = stickersVisible; }, [stickersVisible]);
 
   // load placed stickers when month/year changes
   useEffect(() => {
@@ -48,6 +51,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
   // touch drag-and-drop from the sticker panel (iOS Safari doesn't support HTML5 DnD)
   useEffect(() => {
     const handleTouchDrop = (e: Event) => {
+      if (!stickersVisibleRef.current) return;
       const { dataURL, clientX, clientY } = (e as CustomEvent<{ dataURL: string; clientX: number; clientY: number }>).detail;
       if (!cardRef.current) return;
       const rect = cardRef.current.getBoundingClientRect();
@@ -100,6 +104,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
   }, [monthKey]); // history.push is stable (useCallback [])
 
   const handleDragOver = (e: React.DragEvent) => {
+    if (!stickersVisible) return;
     if (e.dataTransfer.types.includes('sticker-data')) {
       e.preventDefault();
       setStickerDragOver(true);
@@ -117,6 +122,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
 
   const handleDrop = (e: React.DragEvent) => {
     setStickerDragOver(false);
+    if (!stickersVisible) return;
     const data = e.dataTransfer.getData('sticker-data');
     if (!data || !cardRef.current) return;
     e.preventDefault();
@@ -276,6 +282,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         cardWidth={cardSize.width}
         cardHeight={cardSize.height}
         locked={stickersLocked}
+        visible={stickersVisible}
       />
     </div>
   );

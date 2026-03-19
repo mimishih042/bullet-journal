@@ -24,8 +24,9 @@ function useIsNarrow(breakpoint = 1000) {
 export default function App() {
   const [viewYear,   setViewYear]   = useState(today.getFullYear());
   const [viewMonth,  setViewMonth]  = useState(today.getMonth());
-  const [panelOpen,      setPanelOpen]      = useState(true);
-  const [stickersLocked, setStickersLocked] = useState(false);
+  const [panelOpen,        setPanelOpen]        = useState(true);
+  const [stickersLocked,   setStickersLocked]   = useState(false);
+  const [stickersVisible,  setStickersVisible]  = useState(true);
   const isNarrow = useIsNarrow();
   const history = useHistory();
 
@@ -55,16 +56,7 @@ export default function App() {
     canRedo: history.canRedo,
   }), [history.push, history.undo, history.redo, history.clear, history.canUndo, history.canRedo]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
-  const [installed,     setInstalled]     = useState(false);
-  const [showNudge,     setShowNudge]     = useState(false);
-
-  useEffect(() => {
-    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
-    window.addEventListener('beforeinstallprompt', handler);
-    window.addEventListener('appinstalled', () => setInstalled(true));
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+  const [showNudge, setShowNudge] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem(nudgeSeenKey)) return;
@@ -78,14 +70,6 @@ export default function App() {
     window.addEventListener('today-photo-saved', hide);
     return () => window.removeEventListener('today-photo-saved', hide);
   }, []);
-
-  const handleInstall = async () => {
-    if (!installPrompt) return;
-    (installPrompt as any).prompt();
-    const { outcome } = await (installPrompt as any).userChoice;
-    if (outcome === 'accepted') setInstalled(true);
-    setInstallPrompt(null);
-  };
 
   if (isNarrow) {
     return (
@@ -118,6 +102,7 @@ export default function App() {
             onPrevYear={() => setViewYear(y => y - 1)}
             onNextYear={() => setViewYear(y => y + 1)}
             stickersLocked={stickersLocked}
+            stickersVisible={stickersVisible}
           />
         </div>
 
@@ -137,30 +122,34 @@ export default function App() {
       />
 
       <div className={styles.topLeftActions} data-print-hidden>
-        {installPrompt && !installed && (
-          <button className={styles.installBtn} onClick={handleInstall}>
-            📌 Pin to your desktop
+        <div className={styles.actionContainer}>
+          <button
+            className={styles.undoBtn}
+            onClick={history.undo}
+            disabled={!history.canUndo}
+            title="Undo (⌘Z)"
+          >↩</button>
+          <button
+            className={styles.undoBtn}
+            onClick={history.redo}
+            disabled={!history.canRedo}
+            title="Redo (⌘⇧Z)"
+          >↪</button>
+          <button
+            className={`${styles.lockBtn} ${stickersLocked ? styles.lockBtnOn : ''}`}
+            onClick={() => setStickersLocked(l => !l)}
+            title={stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
+          >
+            {stickersLocked ? '🔒 Unlock stickers' : '🔓 Lock stickers'}
           </button>
-        )}
-        <button
-          className={styles.undoBtn}
-          onClick={history.undo}
-          disabled={!history.canUndo}
-          title="Undo (⌘Z)"
-        >↩</button>
-        <button
-          className={styles.undoBtn}
-          onClick={history.redo}
-          disabled={!history.canRedo}
-          title="Redo (⌘⇧Z)"
-        >↪</button>
-        <button
-          className={`${styles.lockBtn} ${stickersLocked ? styles.lockBtnOn : ''}`}
-          onClick={() => setStickersLocked(l => !l)}
-          title={stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
-        >
-          {stickersLocked ? '🔒' : '🔓'} {stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
-        </button>
+          <button
+            className={`${styles.lockBtn} ${!stickersVisible ? styles.lockBtnOn : ''}`}
+            onClick={() => setStickersVisible(v => !v)}
+            title={stickersVisible ? 'Hide stickers' : 'Unhide stickers'}
+          >
+            {stickersVisible ? '👁 Hide stickers' : '🙈 Unhide stickers'}
+          </button>
+        </div>
       </div>
     </div>
     </HistoryContext.Provider>

@@ -474,11 +474,12 @@ interface Props {
   onUpdate: (id: string, patch: Partial<PlacedSticker>) => void;
   onBringToFront: (id: string) => void;
   locked?: boolean;
+  visible?: boolean;
 }
 
-export default function StickerLayer({ stickers, cardWidth, cardHeight, onMove, onDelete, onUpdate, onBringToFront, locked }: Props) {
+export default function StickerLayer({ stickers, cardWidth, cardHeight, onMove, onDelete, onUpdate, onBringToFront, locked, visible = true }: Props) {
   return (
-    <div className={`${styles.stickerLayer} ${locked ? styles.isLocked : ''}`}>
+    <div className={[styles.stickerLayer, locked ? styles.isLocked : '', !visible ? styles.isHidden : ''].filter(Boolean).join(' ')}>
       {stickers.map(sticker => (
         <PlacedStickerItem
           key={sticker.id}

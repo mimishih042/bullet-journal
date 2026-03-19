@@ -395,6 +395,13 @@
   pointer-events: none;
 }
 
+/* ── Hidden state: stickers invisible but layout preserved ─ */
+.isHidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ── Touch devices: hide handles, enlarge delete button ─ */
 @media (pointer: coarse) {
   /* Gesture-based interaction replaces handles on touch */

@@ -63,7 +63,7 @@ function trimTransparent(dataURL: string): Promise<string> {
     img.onload = () => {
       const { width, height } = img;
       const canvas = document.createElement('canvas');
-      canvas.width  = width;
+      canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d')!;
       ctx.drawImage(img, 0, 0);
@@ -87,9 +87,9 @@ function trimTransparent(dataURL: string): Promise<string> {
 
       const trimW = maxX - minX + 1;
       const trimH = maxY - minY + 1;
-      const out   = document.createElement('canvas');
-      out.width   = trimW;
-      out.height  = trimH;
+      const out = document.createElement('canvas');
+      out.width = trimW;
+      out.height = trimH;
       out.getContext('2d')!.drawImage(canvas, minX, minY, trimW, trimH, 0, 0, trimW, trimH);
       resolve(out.toDataURL('image/png'));
     };
@@ -235,6 +235,23 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   const [showAddModal, setShowAddModal] = useState(false);
   const [printMode, setPrintMode] = useState<'with-tabs' | 'no-tabs'>('with-tabs');
   const [exporting, setExporting] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
+  const [installed,     setInstalled]     = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', () => setInstalled(true));
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    (installPrompt as any).prompt();
+    const { outcome } = await (installPrompt as any).userChoice;
+    if (outcome === 'accepted') setInstalled(true);
+    setInstallPrompt(null);
+  };
 
   const handleSavePng = async () => {
     const wrapper = document.getElementById('journal-wrapper');
@@ -265,8 +282,8 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       // html-to-image takes its DOM snapshot, causing stickers to disappear.
       await Promise.all(
         [...wrapper.querySelectorAll('img')].map(img =>
-          img.complete ? img.decode().catch(() => {}) : new Promise<void>(res => {
-            img.onload  = () => img.decode().catch(() => {}).finally(res);
+          img.complete ? img.decode().catch(() => { }) : new Promise<void>(res => {
+            img.onload = () => img.decode().catch(() => { }).finally(res);
             img.onerror = () => res();
           })
         )
@@ -281,13 +298,13 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       await Promise.all(
         ([...wrapper.querySelectorAll('img')] as HTMLImageElement[]).map(async img => {
           if (!img.src.startsWith('data:image/')) return;
-          const displayW = Math.ceil(img.offsetWidth  * scale);
+          const displayW = Math.ceil(img.offsetWidth * scale);
           const displayH = Math.ceil(img.offsetHeight * scale);
           if (!displayW || !displayH) return;
           // Only downscale if image is larger than its display footprint
           if (img.naturalWidth <= displayW && img.naturalHeight <= displayH) return;
           const cnv = document.createElement('canvas');
-          cnv.width  = displayW;
+          cnv.width = displayW;
           cnv.height = displayH;
           const ctx2d = cnv.getContext('2d')!;
           // Fill with the cell's computed background colour first so that if
@@ -301,7 +318,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
           const smallUrl = cnv.toDataURL('image/png');
           imgRestorations.push({ img, orig: img.src });
           img.src = smallUrl;
-          await img.decode().catch(() => {});
+          await img.decode().catch(() => { });
         })
       );
 
@@ -309,7 +326,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       // On the first pass resources are loaded into the SVG context but not
       // yet composited; the second pass captures them correctly.
       const exportOptions = { pixelRatio: scale, cacheBust: true } as const;
-      await toPng(wrapper, exportOptions).catch(() => {}); // warm-up pass
+      await toPng(wrapper, exportOptions).catch(() => { }); // warm-up pass
       const journalDataUrl = await toPng(wrapper, exportOptions);
 
       // Restore original high-res sources after capture
@@ -322,16 +339,16 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       // Measure wrapper and add padding so the calendar sits centred in the
       // square with breathing room on all four sides (~15% of calendar width).
       const { width: wW, height: wH } = wrapper.getBoundingClientRect();
-      const pad  = wW * 0.15;
+      const pad = wW * 0.15;
       const size = Math.max(wW + pad * 2, wH + pad * 2);
 
       const canvas = document.createElement('canvas');
-      canvas.width  = size * scale;
+      canvas.width = size * scale;
       canvas.height = size * scale;
       const ctx = canvas.getContext('2d')!;
 
       // ── Draw background (color or image) from stored settings ──────────
-      const bgType  = await loadSetting('bg-type');
+      const bgType = await loadSetting('bg-type');
       const bgValue = await loadSetting('bg-value');
 
       if (bgType === 'image' && bgValue) {
@@ -349,7 +366,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               drawH = drawW / imgAspect;
             }
             ctx.drawImage(img,
-              (canvas.width  - drawW) / 2,
+              (canvas.width - drawW) / 2,
               (canvas.height - drawH) / 2,
               drawW, drawH,
             );
@@ -418,12 +435,12 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       if (!touchDragRef.current) return;
       const t = ev.touches[0];
       touchDragRef.current.ghost.style.left = `${t.clientX}px`;
-      touchDragRef.current.ghost.style.top  = `${t.clientY}px`;
+      touchDragRef.current.ghost.style.top = `${t.clientY}px`;
     };
 
     const cleanup = () => {
-      document.removeEventListener('touchmove',   onMove);
-      document.removeEventListener('touchend',    onEnd);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
       document.removeEventListener('touchcancel', onEnd);
     };
 
@@ -438,8 +455,8 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       }));
     };
 
-    document.addEventListener('touchmove',   onMove, { passive: false });
-    document.addEventListener('touchend',    onEnd);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
     document.addEventListener('touchcancel', onEnd);
   };
 
@@ -587,43 +604,6 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
           </div>
 
           <div className={styles.panelBody}>
-            {/* ── Background ── */}
-            <p className={styles.sectionLabel}>Background</p>
-            <label className={styles.bgOption}>
-              <span>Color</span>
-              <input
-                type="color"
-                value={bgColor}
-                onFocus={() => { colorPickerBaseRef.current = currentBgRef.current.value; }}
-                onChange={e => applyColor(e.target.value)}
-                onBlur={e => {
-                  const next = e.target.value;
-                  const base = colorPickerBaseRef.current;
-                  if (next !== base) {
-                    history.push({
-                      undo: () => applyBg({ type: 'color', value: base }),
-                      redo: () => applyBg({ type: 'color', value: next }),
-                    });
-                  }
-                }}
-              />
-            </label>
-            <button
-              className={styles.actionBtn}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Upload background image
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={e => e.target.files?.[0] && applyImageFile(e.target.files[0])}
-            />
-
-            <br/>
-
             {/* ── Sticker Pack ── */}
             <div className={styles.stickerSectionHeader}>
               <p className={styles.sectionLabel}>Stickers</p>
@@ -632,7 +612,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                   className={styles.editStickersBtn}
                   onClick={isEditingStickers ? handleEditDone : () => setIsEditingStickers(true)}
                 >
-                  {isEditingStickers ? 'Done' : 'Edit'}
+                  {isEditingStickers ? 'Done' : 'Manage'}
                 </button>
               )}
             </div>
@@ -780,23 +760,58 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                 e.target.value = '';
               }}
             />
+            
+            {/* ── Background ── */}
+            <p className={styles.sectionLabel}>Background</p>
+            <label className={styles.bgOption}>
+              <span>Color</span>
+              <input
+                type="color"
+                value={bgColor}
+                onFocus={() => { colorPickerBaseRef.current = currentBgRef.current.value; }}
+                onChange={e => applyColor(e.target.value)}
+                onBlur={e => {
+                  const next = e.target.value;
+                  const base = colorPickerBaseRef.current;
+                  if (next !== base) {
+                    history.push({
+                      undo: () => applyBg({ type: 'color', value: base }),
+                      redo: () => applyBg({ type: 'color', value: next }),
+                    });
+                  }
+                }}
+              />
+            </label>
+            <button
+              className={styles.actionBtn}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Upload background image
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={e => e.target.files?.[0] && applyImageFile(e.target.files[0])}
+            />
 
-
-            <br/>
-
-            {/* ── Print / Export ── */}
+            {/* ── Export ── */}
             <p className={styles.sectionLabel}>Export</p>
             <button
               className={styles.actionBtn}
               onClick={handleSavePng}
               disabled={exporting}
             >
-              {exporting ? 'Saving…' : 'Save as PNG'}
+              {exporting ? 'Saving…' : '🖼 Save as PNG'}
             </button>
 
-            <br/>
-
-            {/* ── Feedback ── */}
+            <div className={styles.lineBreak}/>
+            {installPrompt && !installed && (
+              <button className={styles.subtleBtn} onClick={handleInstall}>
+                📌 Add to home screen
+              </button>
+            )}
             <FeedbackPrompt context="customization-panel" />
 
           </div>

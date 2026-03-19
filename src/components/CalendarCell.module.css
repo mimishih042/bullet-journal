@@ -97,8 +97,6 @@
   color: rgba(255,255,255,0.9);
 }
 
-.cell.dragOver { outline: 2px dashed var(--color-accent); outline-offset: -2px; }
-
 .actionBtn {
   background: transparent;
   border: none;

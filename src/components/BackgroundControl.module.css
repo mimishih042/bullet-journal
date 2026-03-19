@@ -153,7 +153,6 @@
 }
 
 .actionBtn {
-  margin-top: var(--space-6);
   font-family: var(--font-sans);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--color-ink);
@@ -164,6 +163,7 @@
   cursor: pointer;
   text-align: center;
   transition: background var(--duration-base);
+  margin-bottom: 16px;
 }
 
 .actionBtn:hover {
@@ -229,6 +229,46 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.stickerControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.stickerIconGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stickerIconBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  opacity: 0.55;
+  transition: background var(--duration-base), opacity var(--duration-base), border-color var(--duration-base);
+  padding: 0;
+  line-height: 1;
+}
+
+.stickerIconBtn:hover {
+  opacity: 0.85;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.stickerIconBtnActive {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .editStickersBtn {
@@ -603,6 +643,35 @@
 }
 .sheetDismissBtn:hover { color: rgba(255,255,255,0.7); }
 
+/* ── Subtle button (Save PNG, Install) ─────────────────────────────────── */
+.subtleBtn {
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  padding: 7px var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: background var(--duration-base), color var(--duration-base);
+  white-space: nowrap;
+}
+
+.subtleBtn:hover {
+  background: var(--color-surface-hover);
+}
+
+.subtleBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--color-ink);
+}
+
+.subtleBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* ── Print / Export ────────────────────────────────────────────────────── */
 .radioOption {
   display: flex;
@@ -611,4 +680,9 @@
   font-size: var(--text-md);
   color: var(--color-ink);
   cursor: pointer;
+}
+
+.lineBreak {
+  border-top: 1px dashed;
+  margin-top: 8px;
 }
