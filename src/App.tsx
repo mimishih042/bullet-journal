@@ -6,6 +6,8 @@ import { loadPhoto } from './storage';
 import styles from './App.module.css';
 import { useHistory } from './hooks/useHistory';
 import { HistoryContext } from './context/HistoryContext';
+import UndoIcon from './assets/undo.svg';
+import RedoIcon from './assets/redo.svg';
 
 const today = new Date();
 const todayKey = today.toISOString().split('T')[0];
@@ -128,13 +130,13 @@ export default function App() {
             onClick={history.undo}
             disabled={!history.canUndo}
             title="Undo (⌘Z)"
-          >↩</button>
+          ><img src={UndoIcon} alt="Undo" className={styles.undoIcon}/></button>
           <button
             className={styles.undoBtn}
             onClick={history.redo}
             disabled={!history.canRedo}
             title="Redo (⌘⇧Z)"
-          >↪</button>
+          ><img src={RedoIcon} alt="Redo" className={styles.undoIcon}/></button>
           <button
             className={`${styles.lockBtn} ${stickersLocked ? styles.lockBtnOn : ''}`}
             onClick={() => setStickersLocked(l => !l)}

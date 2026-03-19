@@ -686,3 +686,38 @@
   border-top: 1px dashed;
   margin-top: 8px;
 }
+
+/* ── Note paper ────────────────────────────────────────────────────────── */
+.notePaperRow {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.notePaperBtn {
+  flex: 1;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  padding: 5px 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-ink);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-ink);
+  cursor: pointer;
+  text-align: center;
+  transition: background var(--duration-base), color var(--duration-base);
+}
+
+.notePaperBtn:hover {
+  background: var(--color-surface-subtle);
+}
+
+.notePaperBtnActive {
+  background: var(--color-ink);
+  color: var(--color-surface-paper);
+}
+
+.notePaperBtnActive:hover {
+  background: var(--color-ink);
+  color: var(--color-surface-paper);
+}

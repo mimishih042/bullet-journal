@@ -39,7 +39,8 @@
 .lockBtn {
   font-family: var(--font-sans);
   font-size: var(--text-sm);
-  padding: 8px;
+  padding: 2px 8px;
+  height: 32px;
   border-radius: var(--space-3);
   border: 1px solid var(--color-border);
   background: var(--color-surface-card);
@@ -89,6 +90,11 @@
 .undoBtn:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+.undoIcon {
+  width: 16px;
+  height: 16px;
 }
 
 /* ── Install button ──────────────────────────────────── */

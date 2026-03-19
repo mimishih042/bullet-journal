@@ -209,6 +209,18 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
   const favorites = stickerPack.filter(s => s.isFavorite);
 
+  // ── Note paper ────────────────────────────────────────────────────────────
+  type NotePaper = 'grid' | 'dots' | 'plain';
+  const [notePaper, setNotePaper] = useState<NotePaper>(
+    () => (localStorage.getItem('note-paper') as NotePaper) ?? 'grid'
+  );
+
+  const applyNotePaper = (value: NotePaper) => {
+    setNotePaper(value);
+    localStorage.setItem('note-paper', value);
+    window.dispatchEvent(new Event('note-paper-changed'));
+  };
+
   // ── Edit mode ─────────────────────────────────────────────────────────────
   const [isEditingStickers, setIsEditingStickers] = useState(false);
 
@@ -761,6 +773,20 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               }}
             />
             
+            {/* ── Note paper ── */}
+            <p className={styles.sectionLabel}>Note style</p>
+            <div className={styles.notePaperRow}>
+              {(['grid', 'dots', 'plain'] as const).map(opt => (
+                <button
+                  key={opt}
+                  className={`${styles.notePaperBtn} ${notePaper === opt ? styles.notePaperBtnActive : ''}`}
+                  onClick={() => applyNotePaper(opt)}
+                >
+                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                </button>
+              ))}
+            </div>
+
             {/* ── Background ── */}
             <p className={styles.sectionLabel}>Background</p>
             <label className={styles.bgOption}>
@@ -803,7 +829,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               onClick={handleSavePng}
               disabled={exporting}
             >
-              {exporting ? 'Saving…' : '🖼 Save as PNG'}
+              {exporting ? 'Saving…' : 'Save as PNG'}
             </button>
 
             <div className={styles.lineBreak}/>

@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import styles from './LeftPanel.module.css';
 
+type NotePaper = 'grid' | 'dots' | 'plain';
+
+function getNotePaperStyle(notePaper: NotePaper): import('react').CSSProperties {
+  if (notePaper === 'grid') return { backgroundImage: 'var(--bg-grid)', backgroundSize: 'var(--bg-grid-size)' };
+  if (notePaper === 'dots') return { backgroundImage: 'var(--bg-dots)', backgroundSize: 'var(--bg-grid-size)' };
+  return { backgroundImage: 'none' };
+}
+
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -34,9 +42,20 @@ function useLocalText(key: string) {
 
 export default function LeftPanel({ year, month, onPrevYear, onNextYear }: Props) {
   const [notes, setNotes] = useLocalText(panelKey(year, month, 'notes'));
+  const [notePaper, setNotePaper] = useState<NotePaper>(
+    () => (localStorage.getItem('note-paper') as NotePaper) ?? 'grid'
+  );
+
+  useEffect(() => {
+    const handler = () => {
+      setNotePaper((localStorage.getItem('note-paper') as NotePaper) ?? 'grid');
+    };
+    window.addEventListener('note-paper-changed', handler);
+    return () => window.removeEventListener('note-paper-changed', handler);
+  }, []);
 
   return (
-    <div className={styles.leftPanel}>
+    <div className={styles.leftPanel} style={getNotePaperStyle(notePaper)}>
 
       {/* Month header */}
       <div className={styles.panelHeader}>
