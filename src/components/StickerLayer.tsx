@@ -54,14 +54,17 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
   const [rotation,    setRotation]    = useState(sticker.rotation ?? 0);
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [isSelected,  setIsSelected]  = useState(false);
-  const [pos,         setPos]         = useState({ x: sticker.x * cardWidth,  y: sticker.y * cardHeight });
-  const [stickerW,    setStickerW]    = useState(sticker.width  * cardWidth);
-  const [stickerH,    setStickerH]    = useState(sticker.height * cardWidth);
+  // Store fractional coords in state so pixel values are always computed fresh at
+  // render time (posFrac.x * cardWidth etc.). This means card resize never causes
+  // a one-frame stale-pixel jump — there is nothing to sync after resize.
+  const [posFrac,     setPosFrac]     = useState({ x: sticker.x, y: sticker.y });
+  const [widthFrac,   setWidthFrac]   = useState(sticker.width);
+  const [heightFrac,  setHeightFrac]  = useState(sticker.height);
 
   // ── All mutable values in refs so native event callbacks are stable ──
-  const posRef        = useRef(pos);
-  const stickerWRef   = useRef(stickerW);
-  const stickerHRef   = useRef(stickerH);
+  const posFracRef    = useRef(posFrac);
+  const widthFracRef  = useRef(widthFrac);
+  const heightFracRef = useRef(heightFrac);
   const rotationRef   = useRef(rotation);
   const cardWidthRef  = useRef(cardWidth);
   const cardHeightRef = useRef(cardHeight);
@@ -72,26 +75,26 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
   const isSelectedRef      = useRef(isSelected);
   const lockedRef          = useRef(locked);
 
-  useEffect(() => { posRef.current           = pos;            }, [pos]);
-  useEffect(() => { stickerWRef.current      = stickerW;       }, [stickerW]);
-  useEffect(() => { stickerHRef.current      = stickerH;       }, [stickerH]);
-  useEffect(() => { rotationRef.current      = rotation;       }, [rotation]);
-  useEffect(() => { cardWidthRef.current     = cardWidth;      }, [cardWidth]);
-  useEffect(() => { cardHeightRef.current    = cardHeight;     }, [cardHeight]);
-  useEffect(() => { onMoveRef.current        = onMove;         }, [onMove]);
-  useEffect(() => { onUpdateRef.current      = onUpdate;       }, [onUpdate]);
+  useEffect(() => { posFracRef.current        = posFrac;        }, [posFrac]);
+  useEffect(() => { widthFracRef.current      = widthFrac;      }, [widthFrac]);
+  useEffect(() => { heightFracRef.current     = heightFrac;     }, [heightFrac]);
+  useEffect(() => { rotationRef.current       = rotation;       }, [rotation]);
+  useEffect(() => { cardWidthRef.current      = cardWidth;      }, [cardWidth]);
+  useEffect(() => { cardHeightRef.current     = cardHeight;     }, [cardHeight]);
+  useEffect(() => { onMoveRef.current         = onMove;         }, [onMove]);
+  useEffect(() => { onUpdateRef.current       = onUpdate;       }, [onUpdate]);
   useEffect(() => { onBringToFrontRef.current = onBringToFront; }, [onBringToFront]);
-  useEffect(() => { isSelectedRef.current    = isSelected;     }, [isSelected]);
-  useEffect(() => { lockedRef.current        = locked;         }, [locked]);
+  useEffect(() => { isSelectedRef.current     = isSelected;     }, [isSelected]);
+  useEffect(() => { lockedRef.current         = locked;         }, [locked]);
 
+  // Sync fractional state when the sticker's own props change (move/resize/undo).
+  // cardWidth/cardHeight are intentionally absent — resize is handled at render time.
   useEffect(() => {
-    if (cardWidth > 0 && cardHeight > 0) {
-      setPos({ x: sticker.x * cardWidth, y: sticker.y * cardHeight });
-      setStickerW(sticker.width  * cardWidth);
-      setStickerH(sticker.height * cardWidth);
-      setRotation(sticker.rotation ?? 0);
-    }
-  }, [cardWidth, cardHeight, sticker.x, sticker.y, sticker.width, sticker.height, sticker.rotation]);
+    setPosFrac({ x: sticker.x, y: sticker.y });
+    setWidthFrac(sticker.width);
+    setHeightFrac(sticker.height);
+    setRotation(sticker.rotation ?? 0);
+  }, [sticker.x, sticker.y, sticker.width, sticker.height, sticker.rotation]);
 
   // Deselect when tapping/clicking outside this sticker.
   // Capture phase ensures child stopPropagation doesn't prevent it.
@@ -136,21 +139,22 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
         startX:    t.clientX,
         startY:    t.clientY,
         startTime: Date.now(),
-        initPos:   { ...posRef.current },
+        initPos:   { x: posFracRef.current.x * cardWidthRef.current, y: posFracRef.current.y * cardHeightRef.current },
       };
     };
 
     const makePinch = (t1: Touch, t2: Touch): PinchState => {
       setIsAdjusting(true);
+      const cw = cardWidthRef.current, ch = cardHeightRef.current;
       return {
         kind:      'pinch',
         initDist:  Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY),
         initAngle: Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * 180 / Math.PI,
-        initW:     stickerWRef.current,
-        initH:     stickerHRef.current,
+        initW:     widthFracRef.current  * cw,
+        initH:     heightFracRef.current * cw,
         initRot:   rotationRef.current,
         initMid:   { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 },
-        initPos:   { ...posRef.current },
+        initPos:   { x: posFracRef.current.x * cw, y: posFracRef.current.y * ch },
       };
     };
 
@@ -160,7 +164,8 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
       const mid   = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
 
       const scale  = s.initDist > 0 ? dist / s.initDist : 1;
-      const newW   = Math.max(32, Math.min(cardWidthRef.current * 0.85, s.initW * scale));
+      const cw = cardWidthRef.current, ch = cardHeightRef.current;
+      const newW   = Math.max(32, Math.min(cw * 0.85, s.initW * scale));
       const newH   = newW * (s.initH / s.initW);
       const newRot = s.initRot + (angle - s.initAngle);
 
@@ -168,18 +173,19 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
       const newCx = s.initPos.x + s.initW / 2 + (mid.x - s.initMid.x);
       const newCy = s.initPos.y + s.initH / 2 + (mid.y - s.initMid.y);
 
-      setStickerW(newW);
-      setStickerH(newH);
+      const clampedPos = clampStickerPos(newCx - newW / 2, newCy - newH / 2, newW, newH, newRot, cw, ch);
+      setWidthFrac(newW / cw);
+      setHeightFrac(newH / cw);
       setRotation(newRot);
-      setPos(clampStickerPos(newCx - newW / 2, newCy - newH / 2, newW, newH, newRot, cardWidthRef.current, cardHeightRef.current));
+      setPosFrac({ x: clampedPos.x / cw, y: clampedPos.y / ch });
     };
 
     const commitPinch = () => {
       onUpdateRef.current(stickerIdRef.current, {
-        width:    stickerWRef.current  / cardWidthRef.current,
-        height:   stickerHRef.current  / cardWidthRef.current,
-        x:        posRef.current.x     / cardWidthRef.current,
-        y:        posRef.current.y     / cardHeightRef.current,
+        width:    widthFracRef.current,
+        height:   heightFracRef.current,
+        x:        posFracRef.current.x,
+        y:        posFracRef.current.y,
         rotation: rotationRef.current,
       });
       setIsAdjusting(false);
@@ -220,12 +226,13 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
           if (!t) return;
           const cw = cardWidthRef.current;
           const ch = cardHeightRef.current;
-          setPos(clampStickerPos(
+          const clampedPos = clampStickerPos(
             s.initPos.x + t.clientX - s.startX,
             s.initPos.y + t.clientY - s.startY,
-            stickerWRef.current, stickerHRef.current,
+            widthFracRef.current * cw, heightFracRef.current * cw,
             rotationRef.current, cw, ch,
-          ));
+          );
+          setPosFrac({ x: clampedPos.x / cw, y: clampedPos.y / ch });
         }
       };
 
@@ -244,8 +251,8 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
               setIsSelected(prev => !prev);
             } else {
               onMoveRef.current(stickerIdRef.current,
-                posRef.current.x / cardWidthRef.current,
-                posRef.current.y / cardHeightRef.current,
+                posFracRef.current.x,
+                posFracRef.current.y,
               );
             }
           } else if (s?.kind === 'pinch') {
@@ -310,25 +317,26 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
     onBringToFrontRef.current(stickerIdRef.current);
     e.currentTarget.setPointerCapture(e.pointerId);
     e.stopPropagation();
-    mouseDragRef.current = { startX: e.clientX, startY: e.clientY, initPos: { ...posRef.current } };
+    mouseDragRef.current = { startX: e.clientX, startY: e.clientY, initPos: { x: posFracRef.current.x * cardWidthRef.current, y: posFracRef.current.y * cardHeightRef.current } };
   }, []);
 
   const onMousePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const s = mouseDragRef.current;
     if (!s) return;
-    setPos(clampStickerPos(
+    const clamped = clampStickerPos(
       s.initPos.x + e.clientX - s.startX,
       s.initPos.y + e.clientY - s.startY,
-      stickerWRef.current, stickerHRef.current,
+      widthFracRef.current * cardWidth, heightFracRef.current * cardWidth,
       rotationRef.current, cardWidth, cardHeight,
-    ));
+    );
+    setPosFrac({ x: clamped.x / cardWidth, y: clamped.y / cardHeight });
   }, [cardWidth, cardHeight]);
 
   const onMousePointerUp = useCallback(() => {
     if (!mouseDragRef.current) return;
     mouseDragRef.current = null;
-    onMove(sticker.id, posRef.current.x / cardWidth, posRef.current.y / cardHeight);
-  }, [cardWidth, cardHeight, onMove, sticker.id]);
+    onMove(sticker.id, posFracRef.current.x, posFracRef.current.y);
+  }, [onMove, sticker.id]);
 
   // Route pointer events to mouse handlers only; touch is handled natively above
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -354,20 +362,22 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
     const cy        = rect.top  + rect.height / 2;
     const initAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
     const initRot   = rotationRef.current;
-    const initPos   = { ...posRef.current };
+    const cw = cardWidthRef.current, ch = cardHeightRef.current;
+    const initPos   = { x: posFracRef.current.x * cw, y: posFracRef.current.y * ch };
 
     const onMove = (me: PointerEvent) => {
       const newRot = initRot + Math.atan2(me.clientY - cy, me.clientX - cx) * 180 / Math.PI - initAngle;
+      const clamped = clampStickerPos(initPos.x, initPos.y, widthFracRef.current * cw, heightFracRef.current * cw, newRot, cw, ch);
       setRotation(newRot);
-      setPos(clampStickerPos(initPos.x, initPos.y, stickerWRef.current, stickerHRef.current, newRot, cardWidthRef.current, cardHeightRef.current));
+      setPosFrac({ x: clamped.x / cw, y: clamped.y / ch });
     };
 
     const onUp = (me: PointerEvent) => {
       const finalRot = initRot + Math.atan2(me.clientY - cy, me.clientX - cx) * 180 / Math.PI - initAngle;
-      const clamped  = clampStickerPos(initPos.x, initPos.y, stickerWRef.current, stickerHRef.current, finalRot, cardWidthRef.current, cardHeightRef.current);
+      const clamped  = clampStickerPos(initPos.x, initPos.y, widthFracRef.current * cw, heightFracRef.current * cw, finalRot, cw, ch);
       setRotation(finalRot);
-      setPos(clamped);
-      onUpdate(sticker.id, { rotation: finalRot, x: clamped.x / cardWidthRef.current, y: clamped.y / cardHeightRef.current });
+      setPosFrac({ x: clamped.x / cw, y: clamped.y / ch });
+      onUpdate(sticker.id, { rotation: finalRot, x: clamped.x / cw, y: clamped.y / ch });
       setIsAdjusting(false);
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup',   onUp);
@@ -387,8 +397,8 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
     setIsAdjusting(true);
 
     const startX = e.clientX, startY = e.clientY;
-    const initW  = stickerWRef.current, initH = stickerHRef.current;
-    const initPos = { ...posRef.current };
+    const initW  = widthFracRef.current * cardWidth, initH = heightFracRef.current * cardWidth;
+    const initPos = { x: posFracRef.current.x * cardWidth, y: posFracRef.current.y * cardHeight };
     const aspect  = initH / initW;
     const θ = rotationRef.current * Math.PI / 180;
     const cosθ = Math.cos(θ), sinθ = Math.sin(θ);
@@ -418,11 +428,11 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
 
     const onMove = (me: PointerEvent) => {
       const { newW, newH, newPos } = compute(me.clientX, me.clientY);
-      setStickerW(newW); setStickerH(newH); setPos(newPos);
+      setWidthFrac(newW / cardWidth); setHeightFrac(newH / cardWidth); setPosFrac({ x: newPos.x / cardWidth, y: newPos.y / cardHeight });
     };
     const onUp = (me: PointerEvent) => {
       const { newW, newH, newPos } = compute(me.clientX, me.clientY);
-      setStickerW(newW); setStickerH(newH); setPos(newPos);
+      setWidthFrac(newW / cardWidth); setHeightFrac(newH / cardWidth); setPosFrac({ x: newPos.x / cardWidth, y: newPos.y / cardHeight });
       onUpdate(sticker.id, { width: newW / cardWidth, height: newH / cardWidth, x: newPos.x / cardWidth, y: newPos.y / cardHeight });
       setIsAdjusting(false);
       document.removeEventListener('pointermove', onMove);
@@ -435,7 +445,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
   return (
     <div
       ref={wrapRef}
-      style={{ position: 'absolute', left: pos.x, top: pos.y, touchAction: 'none', '--sticker-z': sticker.zIndex ?? 1 } as React.CSSProperties}
+      style={{ position: 'absolute', left: posFrac.x * cardWidth, top: posFrac.y * cardHeight, touchAction: 'none', '--sticker-z': sticker.zIndex ?? 1 } as React.CSSProperties}
       className={`${styles.stickerWrap} ${isAdjusting ? styles.isActive : ''} ${isSelected ? styles.isSelected : ''}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -444,7 +454,7 @@ function PlacedStickerItem({ sticker, cardWidth, cardHeight, onMove, onDelete, o
       <div
         ref={innerRef}
         className={styles.sticker}
-        style={{ transform: `rotate(${rotation}deg)`, width: stickerW, height: stickerH } as React.CSSProperties}
+        style={{ transform: `rotate(${rotation}deg)`, width: widthFrac * cardWidth, height: heightFrac * cardWidth } as React.CSSProperties}
       >
         <img src={sticker.stickerDataURL} draggable={false} alt="" className={styles.stickerImg} />
 

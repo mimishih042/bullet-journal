@@ -7,7 +7,8 @@ import styles from './DrawingCanvas.module.css';
 export type Stroke = {
   points: [number, number, number][]; // x, y, pressure
   color: string;
-  size: number;
+  size: number;      // legacy: absolute CSS px (kept for backwards compat)
+  sizeNorm?: number; // normalized: fraction of calEl width (size / scaleX at creation)
 };
 
 /** Convert perfect-freehand outline polygon to an SVG path string */
@@ -23,13 +24,66 @@ function getSvgPathFromStroke(pts: number[][]): string {
   return d.join(' ');
 }
 
-function renderStrokes(ctx: CanvasRenderingContext2D, strokes: Stroke[]) {
-  const dpr = window.devicePixelRatio || 1;
+/**
+ * Compute the offset and scale needed to map normalized [0,1] stroke coords
+ * (relative to calEl) into CSS-pixel coords relative to the canvas top-left.
+ *
+ * Uses offsetLeft/offsetTop/offsetWidth/offsetHeight (CSS layout pixels) instead
+ * of getBoundingClientRect so the result is completely invariant to CSS transforms
+ * on ancestor elements. calEl and canvas must share the same offsetParent
+ * (calendarCard, which is position:relative), which is always the case here.
+ */
+function getCalLayout(_canvas: HTMLCanvasElement, calEl: HTMLElement) {
+  return {
+    offsetX: calEl.offsetLeft,
+    offsetY: calEl.offsetTop,
+    scaleX:  calEl.offsetWidth,
+    scaleY:  calEl.offsetHeight,
+  };
+}
+
+/**
+ * Render all committed strokes onto the canvas.
+ * calEl is the calendar grid container (rightPanel). Normalized [0,1] coords
+ * are mapped relative to that element so drawings stay anchored to the grid
+ * even when the LeftPanel or overall card resizes.
+ */
+function renderStrokes(
+  ctx: CanvasRenderingContext2D,
+  strokes: Stroke[],
+  calEl: HTMLElement | null,
+) {
+  const dpr    = window.devicePixelRatio || 1;
+  const canvas = ctx.canvas;
+  const w      = canvas.offsetWidth;
+  const h      = canvas.offsetHeight;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+  if (!w || !h) return; // canvas not yet laid out — nothing to draw
+
+  // Default: scale across full canvas (fallback if calEl not available)
+  let offsetX = 0, offsetY = 0, scaleX = w, scaleY = h;
+  if (calEl) {
+    ({ offsetX, offsetY, scaleX, scaleY } = getCalLayout(canvas, calEl));
+  }
+
   for (const stroke of strokes) {
-    const outline = getStroke(stroke.points, {
-      size: stroke.size,
+    // Legacy strokes (saved before normalization) have first-point x > 1 (absolute CSS px).
+    const isLegacy = stroke.points.length > 0 && stroke.points[0][0] > 1;
+    const pts = isLegacy
+      ? stroke.points
+      : stroke.points.map(([x, y, p]) => [
+          offsetX + x * scaleX,
+          offsetY + y * scaleY,
+          p,
+        ] as [number, number, number]);
+    // sizeNorm is stored as size/scaleX at draw time; multiply back to get
+    // a size that scales proportionally with the layout (like stickers do).
+    const displaySize = stroke.sizeNorm != null
+      ? stroke.sizeNorm * scaleX
+      : stroke.size; // legacy: absolute CSS px
+    const outline = getStroke(pts, {
+      size: displaySize,
       thinning: 0.5,
       smoothing: 0.5,
       streamline: 0.5,
@@ -46,9 +100,10 @@ interface Props {
   eraserMode: boolean;
   monthKey: string;
   onPinch?: (delta: number, prevMidX: number, prevMidY: number, newMidX: number, newMidY: number) => void;
+  calendarRef: React.RefObject<HTMLElement>;
 }
 
-export default function DrawingCanvas({ drawMode, color, size, eraserMode, monthKey, onPinch }: Props) {
+export default function DrawingCanvas({ drawMode, color, size, eraserMode, monthKey, onPinch, calendarRef }: Props) {
   const canvasRef       = useRef<HTMLCanvasElement>(null);
   const strokesRef      = useRef<Stroke[]>([]);
   const currentPtsRef   = useRef<[number, number, number][]>([]);
@@ -60,25 +115,27 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
   const prevPinchRef      = useRef<{ dist: number; midX: number; midY: number } | null>(null);
 
   // Keep mutable props in refs so event handlers registered once stay current
-  const colorRef      = useRef(color);
-  const sizeRef       = useRef(size);
-  const eraserRef     = useRef(eraserMode);
-  const drawModeRef   = useRef(drawMode);
-  const onPinchRef    = useRef(onPinch);
-  const historyRef    = useRef(useHistoryContext());
-  historyRef.current  = useHistoryContext();
+  const colorRef        = useRef(color);
+  const sizeRef         = useRef(size);
+  const eraserRef       = useRef(eraserMode);
+  const drawModeRef     = useRef(drawMode);
+  const onPinchRef      = useRef(onPinch);
+  const calendarRefRef  = useRef<HTMLElement | null>(null);
+  const historyRef      = useRef(useHistoryContext());
+  historyRef.current    = useHistoryContext();
 
-  useEffect(() => { colorRef.current    = color;      }, [color]);
-  useEffect(() => { sizeRef.current     = size;       }, [size]);
-  useEffect(() => { eraserRef.current   = eraserMode; }, [eraserMode]);
-  useEffect(() => { drawModeRef.current = drawMode;   }, [drawMode]);
-  useEffect(() => { onPinchRef.current  = onPinch;    }, [onPinch]);
+  useEffect(() => { colorRef.current       = color;               }, [color]);
+  useEffect(() => { sizeRef.current        = size;                }, [size]);
+  useEffect(() => { eraserRef.current      = eraserMode;          }, [eraserMode]);
+  useEffect(() => { drawModeRef.current    = drawMode;            }, [drawMode]);
+  useEffect(() => { onPinchRef.current     = onPinch;             }, [onPinch]);
+  useEffect(() => { calendarRefRef.current = calendarRef.current; }, [calendarRef]);
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    if (ctx) renderStrokes(ctx, strokesRef.current);
+    if (ctx) renderStrokes(ctx, strokesRef.current, calendarRefRef.current);
   }, []);
 
   // Suppress browser selection / callout / context-menu while drawing
@@ -118,12 +175,39 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
   const monthKeyRef = useRef(monthKey);
   useEffect(() => { monthKeyRef.current = monthKey; }, [monthKey]);
 
-  // Load strokes from DB when month changes (clears canvas first)
+  // Load strokes from DB when month changes; migrate legacy absolute-px strokes to cal-normalized [0,1].
   useEffect(() => {
     strokesRef.current = [];
     redraw();
     loadDrawingStrokes(monthKey).then(loaded => {
-      strokesRef.current = loaded as Stroke[];
+      const canvas = canvasRef.current;
+      const strokes = loaded as Stroke[];
+
+      // Migrate any strokes saved before normalization (first-point x > 1 means CSS px).
+      // Legacy strokes were absolute CSS px relative to the canvas top-left.
+      // Convert them to cal-normalized coords using the current layout.
+      if (canvas && canvas.offsetWidth > 0 && strokes.some(s => s.points[0]?.[0] > 1)) {
+        const calEl = calendarRefRef.current;
+        let offsetX = 0, offsetY = 0, scaleX = canvas.offsetWidth, scaleY = canvas.offsetHeight;
+        if (calEl) {
+          ({ offsetX, offsetY, scaleX, scaleY } = getCalLayout(canvas, calEl));
+        }
+        const migrated = strokes.map(stroke => {
+          if (stroke.points.length === 0 || stroke.points[0][0] <= 1) return stroke;
+          return {
+            ...stroke,
+            points: stroke.points.map(([x, y, p]) => [
+              (x - offsetX) / scaleX,
+              (y - offsetY) / scaleY,
+              p,
+            ] as [number, number, number]),
+          };
+        });
+        strokesRef.current = migrated;
+        saveDrawingStrokes(monthKey, migrated);
+      } else {
+        strokesRef.current = strokes;
+      }
       redraw();
     });
   }, [monthKey, redraw]);
@@ -148,19 +232,30 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Returns CSS-space coords (pre-DPR). renderStrokes applies ctx.setTransform(dpr,…)
-    // which handles DPR internally. We only need to undo any CSS transform zoom so the
-    // pointer position maps to the canvas's natural CSS layout space.
-    const getPoint = (e: PointerEvent): [number, number, number] => {
+    // CSS-pixel position of the pointer relative to the canvas top-left,
+    // undoing any parent CSS-transform zoom.
+    const getCssPos = (e: PointerEvent): [number, number] => {
       const r = canvas.getBoundingClientRect();
-      // cssScale > 1 when a parent transform zooms the canvas visually;
-      // offsetWidth is layout-based and unaffected by CSS transforms.
       const cssScale = r.width / canvas.offsetWidth;
-      return [
-        (e.clientX - r.left) / cssScale,
-        (e.clientY - r.top)  / cssScale,
-        e.pressure || 0.5,
-      ];
+      return [(e.clientX - r.left) / cssScale, (e.clientY - r.top) / cssScale];
+    };
+
+    // Normalized [0, 1] coordinates relative to the calendar grid container (calEl).
+    // Using calEl (rightPanel) as the reference frame means coords remain anchored
+    // to the grid even if the LeftPanel or card changes size.
+    const getPoint = (e: PointerEvent): [number, number, number] => {
+      const calEl = calendarRefRef.current;
+      if (calEl) {
+        const calRect = calEl.getBoundingClientRect();
+        return [
+          (e.clientX - calRect.left) / calRect.width,
+          (e.clientY - calRect.top)  / calRect.height,
+          e.pressure || 0.5,
+        ];
+      }
+      // Fallback: normalize by canvas
+      const [x, y] = getCssPos(e);
+      return [x / canvas.offsetWidth, y / canvas.offsetHeight, e.pressure || 0.5];
     };
 
     const onPointerDown = (e: PointerEvent) => {
@@ -182,11 +277,19 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
 
       if (eraserRef.current) {
         beforeEraseRef.current = [...strokesRef.current];
-        const [px, py] = getPoint(e);
+        const [px, py] = getCssPos(e);
         const r = sizeRef.current * 3;
-        strokesRef.current = strokesRef.current.filter(s =>
-          !s.points.some(([x, y]) => Math.hypot(x - px, y - py) < r)
-        );
+        const calEl = calendarRefRef.current;
+        let offsetX = 0, offsetY = 0, scaleX = canvas.offsetWidth, scaleY = canvas.offsetHeight;
+        if (calEl) ({ offsetX, offsetY, scaleX, scaleY } = getCalLayout(canvas, calEl));
+        strokesRef.current = strokesRef.current.filter(s => {
+          const legacy = s.points.length > 0 && s.points[0][0] > 1;
+          return !s.points.some(([x, y]) => {
+            const sx = legacy ? x : offsetX + x * scaleX;
+            const sy = legacy ? y : offsetY + y * scaleY;
+            return Math.hypot(sx - px, sy - py) < r;
+          });
+        });
         redraw();
         return;
       }
@@ -215,13 +318,21 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
 
       if (!isDrawingRef.current) return;
       e.preventDefault();
-      const [px, py] = getPoint(e);
 
       if (eraserRef.current) {
+        const [px, py] = getCssPos(e);
         const r = sizeRef.current * 3;
-        const next = strokesRef.current.filter(s =>
-          !s.points.some(([x, y]) => Math.hypot(x - px, y - py) < r)
-        );
+        const calEl = calendarRefRef.current;
+        let offsetX = 0, offsetY = 0, scaleX = canvas.offsetWidth, scaleY = canvas.offsetHeight;
+        if (calEl) ({ offsetX, offsetY, scaleX, scaleY } = getCalLayout(canvas, calEl));
+        const next = strokesRef.current.filter(s => {
+          const legacy = s.points.length > 0 && s.points[0][0] > 1;
+          return !s.points.some(([x, y]) => {
+            const sx = legacy ? x : offsetX + x * scaleX;
+            const sy = legacy ? y : offsetY + y * scaleY;
+            return Math.hypot(sx - px, sy - py) < r;
+          });
+        });
         if (next.length !== strokesRef.current.length) {
           strokesRef.current = next;
           redraw();
@@ -231,12 +342,20 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
 
       currentPtsRef.current.push(getPoint(e));
 
-      // Draw committed strokes + live in-progress stroke
+      // Draw committed strokes + live in-progress stroke (denormalize for getStroke)
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      renderStrokes(ctx, strokesRef.current);
+      renderStrokes(ctx, strokesRef.current, calendarRefRef.current);
 
-      const outline = getStroke(currentPtsRef.current, {
+      const calEl = calendarRefRef.current;
+      let offsetX = 0, offsetY = 0, scaleX = canvas.offsetWidth, scaleY = canvas.offsetHeight;
+      if (calEl) ({ offsetX, offsetY, scaleX, scaleY } = getCalLayout(canvas, calEl));
+      const livePts = currentPtsRef.current.map(([x, y, p]) => [
+        offsetX + x * scaleX,
+        offsetY + y * scaleY,
+        p,
+      ] as [number, number, number]);
+      const outline = getStroke(livePts, {
         size: sizeRef.current,
         thinning: 0.5,
         smoothing: 0.5,
@@ -270,10 +389,14 @@ export default function DrawingCanvas({ drawMode, color, size, eraserMode, month
 
       if (currentPtsRef.current.length === 0) return;
 
+      const calEl = calendarRefRef.current;
+      let scaleX = canvas.offsetWidth;
+      if (calEl) ({ scaleX } = getCalLayout(canvas, calEl));
       const newStroke: Stroke = {
         points: [...currentPtsRef.current],
         color: colorRef.current,
         size: sizeRef.current,
+        sizeNorm: sizeRef.current / scaleX,
       };
       const prev = [...strokesRef.current];
       const next = [...strokesRef.current, newStroke];

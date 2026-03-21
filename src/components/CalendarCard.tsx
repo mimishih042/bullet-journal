@@ -27,20 +27,21 @@ interface Props {
 export default function CalendarCard({ year, month, onPrevYear, onNextYear, stickersLocked, stickersVisible, drawMode, drawColor, drawSize, eraserMode, onPinch }: Props) {
   const [placedStickers, setPlacedStickers] = useState<PlacedSticker[]>([]);
   const [stickerDragOver, setStickerDragOver] = useState(false);
-  const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [rightPanelSize, setRightPanelSize] = useState({ width: 0, height: 0 });
+  const cardRef      = useRef<HTMLDivElement>(null);
+  const rightPanelRef = useRef<HTMLDivElement>(null);
   const monthKey = `placed-${year}-${month}`;
   const placedStickersRef = useRef(placedStickers);
   const stickersVisibleRef = useRef(stickersVisible);
   const history = useHistoryContext();
 
   useLayoutEffect(() => {
-    if (!cardRef.current) return;
+    if (!rightPanelRef.current) return;
     const observer = new ResizeObserver(entries => {
       const { width, height } = entries[0].contentRect;
-      setCardSize({ width, height });
+      setRightPanelSize({ width, height });
     });
-    observer.observe(cardRef.current);
+    observer.observe(rightPanelRef.current);
     return () => observer.disconnect();
   }, []);
 
@@ -59,8 +60,8 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
     const handleTouchDrop = (e: Event) => {
       if (!stickersVisibleRef.current) return;
       const { dataURL, clientX, clientY } = (e as CustomEvent<{ dataURL: string; clientX: number; clientY: number }>).detail;
-      if (!cardRef.current) return;
-      const rect = cardRef.current.getBoundingClientRect();
+      if (!rightPanelRef.current) return;
+      const rect = rightPanelRef.current.getBoundingClientRect();
       if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return;
 
       const pixelX = clientX - rect.left;
@@ -130,11 +131,11 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
     setStickerDragOver(false);
     if (!stickersVisible) return;
     const data = e.dataTransfer.getData('sticker-data');
-    if (!data || !cardRef.current) return;
+    if (!data || !rightPanelRef.current) return;
     e.preventDefault();
 
     const { dataURL } = JSON.parse(data) as { id: string; dataURL: string };
-    const rect   = cardRef.current.getBoundingClientRect();
+    const rect   = rightPanelRef.current.getBoundingClientRect();
     const pixelX = e.clientX - rect.left;
     const pixelY = e.clientY - rect.top;
 
@@ -271,13 +272,24 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         drawMode={drawMode}
       />
 
-      <div className={styles.rightPanel}>
+      <div className={styles.rightPanel} ref={rightPanelRef}>
         <div className={styles.dayHeaders}>
           {DAY_LABELS.map(d => (
             <div key={d} className={styles.dayHeaderCell}>{d}</div>
           ))}
         </div>
         <CalendarGrid year={year} month={month} />
+        <StickerLayer
+          stickers={placedStickers}
+          onMove={handleStickerMove}
+          onDelete={handleStickerDelete}
+          onUpdate={handleStickerUpdate}
+          onBringToFront={handleBringToFront}
+          cardWidth={rightPanelSize.width}
+          cardHeight={rightPanelSize.height}
+          locked={stickersLocked || drawMode}
+          visible={stickersVisible}
+        />
       </div>
 
       <DrawingCanvas
@@ -287,18 +299,7 @@ export default function CalendarCard({ year, month, onPrevYear, onNextYear, stic
         eraserMode={eraserMode}
         monthKey={monthKey}
         onPinch={onPinch}
-      />
-
-      <StickerLayer
-        stickers={placedStickers}
-        onMove={handleStickerMove}
-        onDelete={handleStickerDelete}
-        onUpdate={handleStickerUpdate}
-        onBringToFront={handleBringToFront}
-        cardWidth={cardSize.width}
-        cardHeight={cardSize.height}
-        locked={stickersLocked || drawMode}
-        visible={stickersVisible}
+        calendarRef={rightPanelRef}
       />
     </div>
   );
