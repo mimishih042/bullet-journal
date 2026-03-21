@@ -42,11 +42,9 @@ export default function App() {
   const journalRef = useRef<HTMLDivElement>(null);
   const zoomRef    = useRef({ scale: 1, tx: 0, ty: 0 });
 
-  // Reset zoom when draw mode is turned off; close panel when it turns on
+  // Reset zoom when draw mode is turned off
   useEffect(() => {
-    if (drawMode) {
-      setPanelOpen(false);
-    } else {
+    if (!drawMode) {
       const el = journalRef.current;
       if (el) { el.style.transform = ''; el.style.transformOrigin = ''; }
       zoomRef.current = { scale: 1, tx: 0, ty: 0 };
@@ -172,8 +170,7 @@ export default function App() {
           <footer className={styles.footer} data-print-hidden>
             <div className={styles.footerCopy}>© 2026 Mimi Shih</div>
             <a href="https://instagram.com/mimishih_design" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>
-              ✦ Follow my art on Instagram
-            </a>
+              ✦ Instagram @mimmishih_design </a>
           </footer>
         </div>
 

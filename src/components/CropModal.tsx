@@ -195,13 +195,13 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
     return () => ro.disconnect();
   }, []);
 
-  // Re-center image whenever a new src loads
+  // Re-center image whenever a new src or shape changes
   useEffect(() => {
     if (imageSrc) {
       setCrop({ x: 0, y: 0 });
       setZoom(1);
     }
-  }, [imageSrc]);
+  }, [imageSrc, shape]);
 
   const onCropComplete = useCallback((_: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels);
@@ -237,6 +237,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
           {imageSrc ? (
             <>
               <Cropper
+                key={`${imageSrc}-${shape}`}
                 image={imageSrc}
                 crop={crop}
                 zoom={zoom}
@@ -246,6 +247,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}
                 showGrid={false}
+                restrictPosition={false}
                 classes={shape === 'stamp' ? { cropAreaClassName: styles.stampCropArea } : undefined}
                 cropSize={
                   containerSize > 0

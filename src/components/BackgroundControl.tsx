@@ -302,6 +302,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
         '#journal-wrapper * { box-shadow: none !important; }',
         '#journal-wrapper [data-today]::after { display: none !important; }',
         '#journal-wrapper [data-today] span { color: var(--color-ink-tertiary) !important; font-weight: normal !important; }',
+        '#journal-wrapper textarea::placeholder { color: transparent !important; }',
       ].join('\n');
       document.head.appendChild(noShadowStyle);
 
@@ -318,6 +319,30 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             img.onerror = () => res();
           })
         )
+      );
+
+      // ── Pre-convert asset-URL images to data URLs ─────────────────────
+      // html-to-image fetches each image URL to embed it in the SVG foreignObject.
+      // On iOS Safari, same-origin asset URL fetches from within that SVG context
+      // are blocked, causing sticker images (default PNG assets) to disappear.
+      // Fix: convert them all to data URLs in-place before capture, then restore.
+      const nonDataImgRestorations: { img: HTMLImageElement; orig: string }[] = [];
+      await Promise.all(
+        ([...wrapper.querySelectorAll('img')] as HTMLImageElement[]).map(async img => {
+          if (img.src.startsWith('data:')) return;
+          try {
+            const res  = await fetch(img.src);
+            const blob = await res.blob();
+            const dataUrl = await new Promise<string>(resolve => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+            nonDataImgRestorations.push({ img, orig: img.src });
+            img.src = dataUrl;
+            await img.decode().catch(() => { });
+          } catch { /* skip unresolvable URLs */ }
+        })
       );
 
       // iOS fix: html-to-image embeds data URL images as-is inside the SVG
@@ -353,6 +378,20 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
         })
       );
 
+      // ── Capture drawing canvas separately ─────────────────────────────
+      // html-to-image's canvas serialisation (canvas.toDataURL) is unreliable
+      // on iOS Safari. Instead: hide the canvas before capture, grab its pixel
+      // data directly, and composite it onto the output manually.
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const drawingCanvasEl = wrapper.querySelector('canvas') as HTMLCanvasElement | null;
+      let drawingDataUrl: string | null = null;
+      let drawingCanvasRect: DOMRect | null = null;
+      if (drawingCanvasEl && drawingCanvasEl.width > 0 && drawingCanvasEl.height > 0) {
+        drawingDataUrl    = drawingCanvasEl.toDataURL('image/png');
+        drawingCanvasRect = drawingCanvasEl.getBoundingClientRect();
+        drawingCanvasEl.style.visibility = 'hidden';
+      }
+
       // iOS / WebKit fix: html-to-image serialises via SVG foreignObject.
       // On the first pass resources are loaded into the SVG context but not
       // yet composited; the second pass captures them correctly.
@@ -360,8 +399,10 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
       await toPng(wrapper, exportOptions).catch(() => { }); // warm-up pass
       const journalDataUrl = await toPng(wrapper, exportOptions);
 
-      // Restore original high-res sources after capture
+      // Restore canvas visibility and image sources
+      if (drawingCanvasEl) drawingCanvasEl.style.visibility = '';
       for (const { img, orig } of imgRestorations) img.src = orig;
+      for (const { img, orig } of nonDataImgRestorations) img.src = orig;
 
       fontStyle?.remove();
       noShadowStyle.remove();
@@ -369,7 +410,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
       // Measure wrapper and add padding so the calendar sits centred in the
       // square with breathing room on all four sides (~15% of calendar width).
-      const { width: wW, height: wH } = wrapper.getBoundingClientRect();
+      const { width: wW, height: wH } = wrapperRect;
       const pad = wW * 0.15;
       const size = Math.max(wW + pad * 2, wH + pad * 2);
 
@@ -427,6 +468,25 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
         };
         img.src = journalDataUrl;
       });
+
+      // ── Composite drawing strokes on top ───────────────────────────────
+      if (drawingDataUrl && drawingCanvasRect) {
+        await new Promise<void>(resolve => {
+          const img = new Image();
+          img.onload = () => {
+            const offsetX = drawingCanvasRect!.left - wrapperRect.left;
+            const offsetY = drawingCanvasRect!.top  - wrapperRect.top;
+            ctx.drawImage(img,
+              ((size - wW) / 2 + offsetX) * scale,
+              ((size - wH) / 2 + offsetY) * scale,
+              drawingCanvasRect!.width  * scale,
+              drawingCanvasRect!.height * scale,
+            );
+            resolve();
+          };
+          img.src = drawingDataUrl!;
+        });
+      }
 
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
@@ -637,7 +697,6 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
             {/* ── Starter pack ── */}
             <div className={styles.stickerGroup}>
-              <p className={styles.stickerGroupLabel}>Starter pack ✨</p>
               <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
                 {starterPack.map(sticker => (
                   <div
@@ -670,13 +729,15 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
             {/* ── User stickers ── */}
             <div className={styles.stickerGroup}>
               <div className={styles.stickerSectionHeader}>
-                <p className={styles.stickerGroupLabel}>All stickers</p>
-                <button
-                  className={styles.editStickersBtn}
-                  onClick={isEditingStickers ? handleEditDone : () => setIsEditingStickers(true)}
-                >
-                  {isEditingStickers ? 'Done' : 'Manage'}
-                </button>
+                <p className={styles.stickerGroupLabel}>Custom stickers</p>
+                {userStickers.length > 0 && (
+                  <button
+                    className={styles.editStickersBtn}
+                    onClick={isEditingStickers ? handleEditDone : () => setIsEditingStickers(true)}
+                  >
+                    {isEditingStickers ? 'Done' : 'Manage'}
+                  </button>
+                )}
               </div>
                 <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
                   {userStickers.map(sticker => (

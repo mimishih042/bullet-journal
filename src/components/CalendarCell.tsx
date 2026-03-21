@@ -130,7 +130,14 @@ export default function CalendarCell({ day, dateKey, isOtherMonth, isToday }: Pr
 
         {photoURL && (
           <>
-            <img className={styles.cellPhoto} src={photoURL} alt="" />
+            <img
+              className={[
+                styles.cellPhoto,
+                photoURL?.startsWith('data:image/png') ? styles.cellPhotoContain : '',
+              ].join(' ')}
+              src={photoURL}
+              alt=""
+            />
             <button
               className={styles.removeBtn}
               title="Remove photo"
