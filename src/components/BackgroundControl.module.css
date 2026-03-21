@@ -750,3 +750,18 @@
   background: var(--color-ink);
   color: var(--color-surface-paper);
 }
+
+/* ── Typeface select ────────────────────────────────────────────────────── */
+.fontSelect {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--color-ink);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-sm);
+  padding: 5px var(--space-4);
+  cursor: pointer;
+  appearance: auto;
+  margin-bottom: var(--space-4);
+}

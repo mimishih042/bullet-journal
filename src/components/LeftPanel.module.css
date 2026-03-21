@@ -51,6 +51,7 @@
 
 .monthName {
   font-size: var(--text-4xl);
+  font-family: var(--font-sans);
   font-weight: bold;
   font-style: italic;
   color: var(--color-ink);

@@ -210,7 +210,11 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
   const handleDeleteSticker = async (id: string) => {
     await deleteStickerItem(id);
-    setStickerPack(prev => prev.filter(s => s.id !== id));
+    setStickerPack(prev => {
+      const next = prev.filter(s => s.id !== id);
+      if (next.length === 0) setIsEditingStickers(false);
+      return next;
+    });
   };
 
   const toggleFavorite = async (id: string) => {
@@ -233,6 +237,34 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     localStorage.setItem('note-paper', value);
     window.dispatchEvent(new Event('note-paper-changed'));
   };
+
+  // ── Calendar typeface ──────────────────────────────────────────────────────
+  const FONT_OPTIONS = [
+    { name: 'Sans Serif', label: 'Bricolage Grotesque',  value: '"Bricolage Grotesque", sans-serif' },
+    { name: 'Serif', label: 'Playfair Display',     value: '"Playfair Display", serif'         },
+    { name: 'Monospace', label: 'Datatype',             value: '"Datatype", monospace'             },
+    { name: 'Calligraphy', label: 'Borel',                value: '"Borel", cursive'                  },
+  ] as const;
+  type FontValue = typeof FONT_OPTIONS[number]['value'];
+
+  const DEFAULT_FONT: FontValue = '"Bricolage Grotesque", sans-serif';
+
+  const [calendarFont, setCalendarFont] = useState<FontValue>(
+    () => (localStorage.getItem('calendar-font') as FontValue) ?? DEFAULT_FONT
+  );
+
+  const applyCalendarFont = (value: FontValue) => {
+    setCalendarFont(value);
+    localStorage.setItem('calendar-font', value);
+    const el = document.getElementById('journal-wrapper');
+    if (el) el.style.setProperty('--font-sans', value);
+  };
+
+  useEffect(() => {
+    const el = document.getElementById('journal-wrapper');
+    if (el) el.style.setProperty('--font-sans', calendarFont);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Edit mode ─────────────────────────────────────────────────────────────
   const [isEditingStickers, setIsEditingStickers] = useState(false);
@@ -501,54 +533,98 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   const handleStickerTouchStart = (dataURL: string) => (e: React.TouchEvent) => {
     if (isEditingStickers) return;
     const touch = e.touches[0];
+    const startX = touch.clientX;
+    const startY = touch.clientY;
 
-    const ghost = document.createElement('div');
-    ghost.style.cssText = [
-      'position:fixed',
-      'width:80px',
-      'height:80px',
-      'pointer-events:none',
-      'z-index:9999',
-      'opacity:0.85',
-      'transform:translate(-50%,-50%)',
-      `left:${touch.clientX}px`,
-      `top:${touch.clientY}px`,
-    ].join(';');
-    const img = document.createElement('img');
-    img.src = dataURL;
-    img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
-    ghost.appendChild(img);
-    document.body.appendChild(ghost);
-    touchDragRef.current = { dataURL, ghost };
+    // Long-press threshold: 300 ms hold without moving activates the drag.
+    // Any finger movement beyond 8 px before the timer fires cancels it and
+    // lets the panel scroll naturally.
+    const LONG_PRESS_MS = 300;
+    const MOVE_CANCEL_PX = 8;
 
-    const onMove = (ev: TouchEvent) => {
-      ev.preventDefault();
-      if (!touchDragRef.current) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let dragging = false;
+
+    const cancelPress = () => {
+      if (timer !== null) { clearTimeout(timer); timer = null; }
+      document.removeEventListener('touchmove', onEarlyMove);
+      document.removeEventListener('touchend',  onEarlyEnd);
+      document.removeEventListener('touchcancel', onEarlyEnd);
+    };
+
+    // Before the long-press fires: track movement to decide scroll vs drag
+    const onEarlyMove = (ev: TouchEvent) => {
       const t = ev.touches[0];
-      touchDragRef.current.ghost.style.left = `${t.clientX}px`;
-      touchDragRef.current.ghost.style.top = `${t.clientY}px`;
+      const dx = Math.abs(t.clientX - startX);
+      const dy = Math.abs(t.clientY - startY);
+      if (dx > MOVE_CANCEL_PX || dy > MOVE_CANCEL_PX) cancelPress();
     };
 
-    const cleanup = () => {
-      document.removeEventListener('touchmove', onMove);
-      document.removeEventListener('touchend', onEnd);
-      document.removeEventListener('touchcancel', onEnd);
-    };
+    const onEarlyEnd = () => cancelPress();
 
-    const onEnd = (ev: TouchEvent) => {
-      if (!touchDragRef.current) return;
-      const t = ev.changedTouches[0];
-      touchDragRef.current.ghost.remove();
-      touchDragRef.current = null;
-      cleanup();
-      document.dispatchEvent(new CustomEvent('sticker-touch-drop', {
-        detail: { dataURL, clientX: t.clientX, clientY: t.clientY },
-      }));
-    };
+    timer = setTimeout(() => {
+      timer = null;
+      dragging = true;
+      document.removeEventListener('touchmove', onEarlyMove);
+      document.removeEventListener('touchend',  onEarlyEnd);
+      document.removeEventListener('touchcancel', onEarlyEnd);
 
-    document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('touchend', onEnd);
-    document.addEventListener('touchcancel', onEnd);
+      // Activate drag ghost at the finger's current position
+      const ghost = document.createElement('div');
+      ghost.style.cssText = [
+        'position:fixed',
+        'width:80px',
+        'height:80px',
+        'pointer-events:none',
+        'z-index:9999',
+        'opacity:0.85',
+        'transform:translate(-50%,-50%)',
+        `left:${startX}px`,
+        `top:${startY}px`,
+      ].join(';');
+      const img = document.createElement('img');
+      img.src = dataURL;
+      img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+      ghost.appendChild(img);
+      document.body.appendChild(ghost);
+      touchDragRef.current = { dataURL, ghost };
+
+      const onMove = (ev: TouchEvent) => {
+        ev.preventDefault();
+        if (!touchDragRef.current) return;
+        const t = ev.touches[0];
+        touchDragRef.current.ghost.style.left = `${t.clientX}px`;
+        touchDragRef.current.ghost.style.top  = `${t.clientY}px`;
+      };
+
+      const cleanupDrag = () => {
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend',  onDragEnd);
+        document.removeEventListener('touchcancel', onDragEnd);
+      };
+
+      const onDragEnd = (ev: TouchEvent) => {
+        if (!touchDragRef.current) return;
+        const t = ev.changedTouches[0];
+        touchDragRef.current.ghost.remove();
+        touchDragRef.current = null;
+        cleanupDrag();
+        document.dispatchEvent(new CustomEvent('sticker-touch-drop', {
+          detail: { dataURL, clientX: t.clientX, clientY: t.clientY },
+        }));
+      };
+
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend',  onDragEnd);
+      document.addEventListener('touchcancel', onDragEnd);
+    }, LONG_PRESS_MS);
+
+    document.addEventListener('touchmove',   onEarlyMove, { passive: true });
+    document.addEventListener('touchend',    onEarlyEnd);
+    document.addEventListener('touchcancel', onEarlyEnd);
+
+    // Suppress the variable-used-before-assignment lint warning
+    void dragging;
   };
 
   return (
@@ -814,6 +890,18 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                 </button>
               ))}
             </div>
+
+            {/* ── Typeface ── */}
+            <p className={styles.sectionLabel}>Typeface</p>
+            <select
+              className={styles.fontSelect}
+              value={calendarFont}
+              onChange={e => applyCalendarFont(e.target.value as FontValue)}
+            >
+              {FONT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.name}</option>
+              ))}
+            </select>
 
             {/* ── Background ── */}
             <p className={styles.sectionLabel}>Background</p>
