@@ -61,6 +61,11 @@
   opacity: 0.85;
 }
 
+.lockBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ── Undo / Redo buttons ─────────────────────────────── */
 .undoBtn {
   font-family: var(--font-sans);

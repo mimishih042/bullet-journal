@@ -136,6 +136,25 @@
   margin: 0;
 }
 
+/* ── Sticker group (starter pack / all stickers) ────────────────────────── */
+.stickerGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.stickerGroup + .stickerGroup {
+  margin-top: var(--space-6);
+}
+
+.stickerGroupLabel {
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--color-ink-label);
+  margin: 0;
+}
+
 /* ── Background controls ───────────────────────────────────────────────── */
 .bgOption {
   display: flex;

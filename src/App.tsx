@@ -199,11 +199,12 @@ export default function App() {
               title="Redo (⌘⇧Z)"
             ><img src={RedoIcon} alt="Redo" className={styles.undoIcon} /></button>
             <button
-              className={`${styles.lockBtn} ${stickersLocked ? styles.lockBtnOn : ''}`}
-              onClick={() => setStickersLocked(l => !l)}
-              title={stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
+              className={`${styles.lockBtn} ${(stickersLocked || drawMode) ? styles.lockBtnOn : ''}`}
+              onClick={() => { if (!drawMode) setStickersLocked(l => !l); }}
+              disabled={drawMode}
+              title={drawMode ? 'Stickers are locked while in draw mode' : stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
             >
-              {stickersLocked ? '🔒 Unlock stickers' : '🔓 Lock stickers'}
+              {(stickersLocked || drawMode) ? '🔒 Unlock stickers' : '🔓 Lock stickers'}
             </button>
             <button
               className={`${styles.lockBtn} ${!stickersVisible ? styles.lockBtnOn : ''}`}

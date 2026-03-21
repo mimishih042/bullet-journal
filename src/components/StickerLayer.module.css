@@ -283,15 +283,15 @@
 /* ── Rotate handle ───────────────────────────────────── */
 .rotateHandle {
   position: absolute;
-  bottom: -10px;
+  bottom: -13px;
   left: 50%;
   transform: translateX(-50%);
-  width: 18px;
-  height: 18px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--color-handle);
   color: var(--color-handle-text);
-  font-size: 14px;
+  font-size: var(--text-xl);
   cursor: grab;
   display: flex;
   align-items: center;
@@ -304,10 +304,10 @@
 /* ── Resize handle ───────────────────────────────────── */
 .resizeHandle {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   background: var(--color-ink-muted);
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: nwse-resize;
   z-index: var(--z-handles);
 }
@@ -331,15 +331,15 @@
 /* ── Delete button ───────────────────────────────────── */
 .deleteBtn {
   position: absolute;
-  top: -12px;
-  right: -12px;
-  width: 18px;
-  height: 18px;
+  top: -13px;
+  right: -13px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--color-danger);
   color: #fff;
   border: none;
-  font-size: 0.78rem;
+  font-size: var(--text-xl);
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -410,12 +410,4 @@
     display: none;
   }
 
-  /* Larger delete button for fingers */
-  .deleteBtn {
-    top: -22px;
-    right: -22px;
-    width: 24px;
-    height: 24px;
-    font-size: 1rem;
-  }
 }

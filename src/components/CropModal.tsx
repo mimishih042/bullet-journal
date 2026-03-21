@@ -249,7 +249,9 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }: Props) {
                 classes={shape === 'stamp' ? { cropAreaClassName: styles.stampCropArea } : undefined}
                 cropSize={
                   containerSize > 0
-                    ? { width: containerSize, height: containerSize }
+                    ? shape === 'square'
+                      ? { width: containerSize * 0.8, height: containerSize * 0.8 }
+                      : { width: containerSize, height: containerSize }
                     : undefined
                 }
               />

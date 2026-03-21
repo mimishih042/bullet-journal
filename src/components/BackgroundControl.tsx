@@ -10,6 +10,21 @@ import { useHistoryContext } from '../context/HistoryContext';
 import StickerPeelPreview from './StickerPeelPreview';
 import FeedbackPrompt from './FeedbackPrompt';
 import { extractStickersFromSheet } from '../utils/extractStickers';
+import bowPng     from '../assets/stickers/bow.png';
+import rainbowPng from '../assets/stickers/rainbow.png';
+import pencilPng  from '../assets/stickers/pencil.png';
+import flowerPng  from '../assets/stickers/flower.png';
+import lovePng    from '../assets/stickers/love.png';
+import starPng    from '../assets/stickers/star.png';
+
+const DEFAULT_STICKERS: { id: string; src: string }[] = [
+  { id: 'default-love',    src: lovePng    },
+  { id: 'default-star',    src: starPng    },
+  { id: 'default-bow',     src: bowPng     },
+  { id: 'default-rainbow', src: rainbowPng },
+  { id: 'default-flower',  src: flowerPng  },
+  { id: 'default-pencil',  src: pencilPng  },
+];
 
 /**
  * Fetches the project font from Google Fonts and injects it as a base64
@@ -207,8 +222,6 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     await saveStickerItem(item);
   };
 
-  const favorites = stickerPack.filter(s => s.isFavorite);
-
   // ── Note paper ────────────────────────────────────────────────────────────
   type NotePaper = 'grid' | 'dots' | 'plain';
   const [notePaper, setNotePaper] = useState<NotePaper>(
@@ -225,6 +238,12 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
   const [isEditingStickers, setIsEditingStickers] = useState(false);
 
   const handleEditDone = () => setIsEditingStickers(false);
+
+  type DisplaySticker = { id: string; dataURL: string; isFavorite: boolean; isDefault: boolean };
+  const starterPack: DisplaySticker[] = DEFAULT_STICKERS.map(s => ({ id: s.id, dataURL: s.src, isFavorite: false, isDefault: true }));
+  const userStickers: DisplaySticker[] = stickerPack
+    .map(s => ({ id: s.id, dataURL: s.dataURL, isFavorite: s.isFavorite ?? false, isDefault: false }))
+    .sort((a, b) => (a.isFavorite === b.isFavorite ? 0 : a.isFavorite ? -1 : 1));
 
   const handleSheetUpload = async (file: File) => {
     setExtracting(true);
@@ -614,97 +633,24 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
           <div className={styles.panelBody}>
             {/* ── Sticker Pack ── */}
-            <div className={styles.stickerSectionHeader}>
-              <p className={styles.sectionLabel}>Stickers</p>
-              {stickerPack.length > 0 && (
-                <button
-                  className={styles.editStickersBtn}
-                  onClick={isEditingStickers ? handleEditDone : () => setIsEditingStickers(true)}
-                >
-                  {isEditingStickers ? 'Done' : 'Manage'}
-                </button>
-              )}
-            </div>
+            <p className={styles.sectionLabel}>Stickers</p>
 
-            {/* ── Favorites grid ── */}
-            {favorites.length > 0 && (
-              <>
-                <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
-                  {favorites.map(sticker => (
-                    <div
-                      key={sticker.id}
-                      className={[
-                        styles.stickerThumbWrap,
-                        isEditingStickers ? styles.stickerThumbEditing : '',
-                      ].join(' ')}
-                      draggable={!isEditingStickers}
-                      onDragStart={!isEditingStickers ? e => {
-                        e.dataTransfer.setData(
-                          'sticker-data',
-                          JSON.stringify({ id: sticker.id, dataURL: sticker.dataURL })
-                        );
-                        e.dataTransfer.effectAllowed = 'copy';
-                        const ghost = document.createElement('img');
-                        ghost.src = sticker.dataURL;
-                        ghost.width = 80;
-                        ghost.height = 80;
-                        ghost.style.cssText =
-                          'position:fixed;top:-200px;left:-200px;object-fit:contain;pointer-events:none;';
-                        document.body.appendChild(ghost);
-                        e.dataTransfer.setDragImage(ghost, 40, 40);
-                        requestAnimationFrame(() => document.body.removeChild(ghost));
-                      } : undefined}
-                      onTouchStart={!isEditingStickers ? handleStickerTouchStart(sticker.dataURL) : undefined}
-                      title={isEditingStickers ? undefined : 'Drag to place on calendar'}
-                    >
-                      {isEditingStickers ? (
-                        <img src={sticker.dataURL} draggable={false} className={styles.stickerThumbImg} alt="" />
-                      ) : (
-                        <StickerPeelPreview src={sticker.dataURL} filterId={`fav-${sticker.id}`} />
-                      )}
-                      <button
-                        className={`${styles.favoriteBtn} ${isEditingStickers && styles.favoriteBtnEditing} ${styles.favoriteBtnActive}`}
-                        onClick={isEditingStickers ? e => { e.stopPropagation(); toggleFavorite(sticker.id); } : undefined}
-                        style={isEditingStickers ? undefined : { pointerEvents: 'none' }}
-                        title={isEditingStickers ? 'Remove from favorites' : undefined}
-                      >
-                        ★
-                      </button>
-                      <button
-                        className={`${styles.stickerThumbDelete} ${isEditingStickers ? styles.stickerThumbDeleteVisible : ''}`}
-                        onClick={() => handleDeleteSticker(sticker.id)}
-                        title="Remove from pack"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {stickerPack.some(s => !s.isFavorite) && (
+            {/* ── Starter pack ── */}
+            <div className={styles.stickerGroup}>
+              <p className={styles.stickerGroupLabel}>Starter pack ✨</p>
               <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
-                {stickerPack.map((sticker) => sticker.isFavorite ? null : (
+                {starterPack.map(sticker => (
                   <div
                     key={sticker.id}
-                    className={[
-                      styles.stickerThumbWrap,
-                      isEditingStickers ? styles.stickerThumbEditing : '',
-                    ].join(' ')}
+                    className={[styles.stickerThumbWrap, isEditingStickers ? styles.stickerThumbEditing : ''].join(' ')}
                     draggable={!isEditingStickers}
                     onDragStart={!isEditingStickers ? e => {
-                      e.dataTransfer.setData(
-                        'sticker-data',
-                        JSON.stringify({ id: sticker.id, dataURL: sticker.dataURL })
-                      );
+                      e.dataTransfer.setData('sticker-data', JSON.stringify({ id: sticker.id, dataURL: sticker.dataURL }));
                       e.dataTransfer.effectAllowed = 'copy';
                       const ghost = document.createElement('img');
                       ghost.src = sticker.dataURL;
-                      ghost.width = 80;
-                      ghost.height = 80;
-                      ghost.style.cssText =
-                        'position:fixed;top:-200px;left:-200px;object-fit:contain;pointer-events:none;';
+                      ghost.width = 80; ghost.height = 80;
+                      ghost.style.cssText = 'position:fixed;top:-200px;left:-200px;object-fit:contain;pointer-events:none;';
                       document.body.appendChild(ghost);
                       e.dataTransfer.setDragImage(ghost, 40, 40);
                       requestAnimationFrame(() => document.body.removeChild(ghost));
@@ -712,43 +658,67 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
                     onTouchStart={!isEditingStickers ? handleStickerTouchStart(sticker.dataURL) : undefined}
                     title={isEditingStickers ? undefined : 'Drag to place on calendar'}
                   >
-                    {isEditingStickers ? (
-                      <img
-                        src={sticker.dataURL}
-                        draggable={false}
-                        className={styles.stickerThumbImg}
-                        alt=""
-                      />
-                    ) : (
-                      <StickerPeelPreview src={sticker.dataURL} filterId={sticker.id} />
-                    )}
-                    {(isEditingStickers || sticker.isFavorite) && (
-                      <button
-                        className={`${styles.favoriteBtn} ${isEditingStickers && styles.favoriteBtnEditing} ${sticker.isFavorite ? styles.favoriteBtnActive : ''}`}
-                        onClick={isEditingStickers ? e => { e.stopPropagation(); toggleFavorite(sticker.id); } : undefined}
-                        style={isEditingStickers ? undefined : { pointerEvents: 'none' }}
-                        title={isEditingStickers ? (sticker.isFavorite ? 'Remove from favorites' : 'Add to favorites') : undefined}
-                      >
-                        {sticker.isFavorite ? '★' : '☆'}
-                      </button>
-                    )}
-                    <button
-                      className={`${styles.stickerThumbDelete} ${isEditingStickers ? styles.stickerThumbDeleteVisible : ''}`}
-                      onClick={() => handleDeleteSticker(sticker.id)}
-                      title="Remove from pack"
-                    >
-                      ×
-                    </button>
+                    {isEditingStickers
+                      ? <img src={sticker.dataURL} draggable={false} className={styles.stickerThumbImg} alt="" />
+                      : <StickerPeelPreview src={sticker.dataURL} filterId={sticker.id} />
+                    }
                   </div>
                 ))}
               </div>
-            )}
+            </div>
 
-            {stickerPack.length === 0 && (
-              <p className={styles.stickerEmpty}>
-                No stickers yet — upload your own PNG or JPEG images and drag them onto the calendar!
-              </p>
-            )}
+            {/* ── User stickers ── */}
+            <div className={styles.stickerGroup}>
+              <div className={styles.stickerSectionHeader}>
+                <p className={styles.stickerGroupLabel}>All stickers</p>
+                <button
+                  className={styles.editStickersBtn}
+                  onClick={isEditingStickers ? handleEditDone : () => setIsEditingStickers(true)}
+                >
+                  {isEditingStickers ? 'Done' : 'Manage'}
+                </button>
+              </div>
+                <div className={`${styles.stickerGrid} ${isEditingStickers ? styles.stickerGridEditing : ''}`}>
+                  {userStickers.map(sticker => (
+                    <div
+                      key={sticker.id}
+                      className={[styles.stickerThumbWrap, isEditingStickers ? styles.stickerThumbEditing : ''].join(' ')}
+                      draggable={!isEditingStickers}
+                      onDragStart={!isEditingStickers ? e => {
+                        e.dataTransfer.setData('sticker-data', JSON.stringify({ id: sticker.id, dataURL: sticker.dataURL }));
+                        e.dataTransfer.effectAllowed = 'copy';
+                        const ghost = document.createElement('img');
+                        ghost.src = sticker.dataURL;
+                        ghost.width = 80; ghost.height = 80;
+                        ghost.style.cssText = 'position:fixed;top:-200px;left:-200px;object-fit:contain;pointer-events:none;';
+                        document.body.appendChild(ghost);
+                        e.dataTransfer.setDragImage(ghost, 40, 40);
+                        requestAnimationFrame(() => document.body.removeChild(ghost));
+                      } : undefined}
+                      onTouchStart={!isEditingStickers ? handleStickerTouchStart(sticker.dataURL) : undefined}
+                      title={isEditingStickers ? undefined : 'Drag to place on calendar'}
+                    >
+                      {isEditingStickers
+                        ? <img src={sticker.dataURL} draggable={false} className={styles.stickerThumbImg} alt="" />
+                        : <StickerPeelPreview src={sticker.dataURL} filterId={sticker.id} />
+                      }
+                      {(sticker.isFavorite || isEditingStickers) && (
+                        <button
+                          className={`${styles.favoriteBtn} ${isEditingStickers ? styles.favoriteBtnEditing : ''} ${sticker.isFavorite ? styles.favoriteBtnActive : ''}`}
+                          onClick={isEditingStickers ? e => { e.stopPropagation(); toggleFavorite(sticker.id); } : undefined}
+                          style={isEditingStickers ? undefined : { pointerEvents: 'none' }}
+                          title={isEditingStickers ? (sticker.isFavorite ? 'Remove from favorites' : 'Add to favorites') : undefined}
+                        >{sticker.isFavorite ? '★' : '☆'}</button>
+                      )}
+                      <button
+                        className={`${styles.stickerThumbDelete} ${isEditingStickers ? styles.stickerThumbDeleteVisible : ''}`}
+                        onClick={() => handleDeleteSticker(sticker.id)}
+                        title="Remove from pack"
+                      >×</button>
+                    </div>
+                  ))}
+                </div>
+            </div>
 
             <button
               className={styles.actionBtn}
