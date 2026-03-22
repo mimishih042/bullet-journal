@@ -31,7 +31,7 @@
   font-family: var(--font-sans);
   color: var(--color-ink-tertiary);
   z-index: 2;
-  line-height: 1;
+  line-height: var(--cell-date-line-height, 1);
   text-shadow: 0 1px 3px rgba(255,255,255,0.8);
 }
 

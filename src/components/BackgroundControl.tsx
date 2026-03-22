@@ -253,16 +253,32 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     () => (localStorage.getItem('calendar-font') as FontValue) ?? DEFAULT_FONT
   );
 
+  const CALLIGRAPHY_FONT: FontValue = '"Borel", cursive';
+
   const applyCalendarFont = (value: FontValue) => {
     setCalendarFont(value);
     localStorage.setItem('calendar-font', value);
     const el = document.getElementById('journal-wrapper');
-    if (el) el.style.setProperty('--font-sans', value);
+    if (el) {
+      const isCalligraphy = value === CALLIGRAPHY_FONT;
+      el.style.setProperty('--font-sans', value);
+      el.style.setProperty('--note-line-height', isCalligraphy ? '2' : '1.65');
+      el.style.setProperty('--cell-date-line-height', isCalligraphy ? 'normal' : '1');
+      el.style.setProperty('--tab-line-height', isCalligraphy ? '1rem' : 'normal');
+      el.style.setProperty('--day-header-line-height', isCalligraphy ? '1' : 'normal');
+    }
   };
 
   useEffect(() => {
     const el = document.getElementById('journal-wrapper');
-    if (el) el.style.setProperty('--font-sans', calendarFont);
+    if (el) {
+      const isCalligraphy = calendarFont === CALLIGRAPHY_FONT;
+      el.style.setProperty('--font-sans', calendarFont);
+      el.style.setProperty('--note-line-height', isCalligraphy ? '2' : '1.65');
+      el.style.setProperty('--cell-date-line-height', isCalligraphy ? 'normal' : '1');
+      el.style.setProperty('--tab-line-height', isCalligraphy ? '1rem' : 'normal');
+      el.style.setProperty('--day-header-line-height', isCalligraphy ? '1' : 'normal');
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -90,7 +90,7 @@
   font-family: var(--font-sans);
   font-size: var(--text-base);
   color: var(--color-ink-body);
-  line-height: 1.65;
+  line-height: var(--note-line-height, 1.65);
   outline: none;
   transition: background var(--duration-base), box-shadow var(--duration-base);
 }

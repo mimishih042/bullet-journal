@@ -23,6 +23,7 @@
   cursor: pointer;
   color: var(--color-ink-muted);
   transition: background var(--duration-fast), color var(--duration-fast);
+  line-height: 0.9rem;
   white-space: nowrap;
   min-width: 0;
 }

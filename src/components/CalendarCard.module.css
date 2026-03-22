@@ -47,5 +47,6 @@
   letter-spacing: 0.12em;
   color: var(--color-ink-label);
   text-align: center;
+  line-height: var(--day-header-line-height, normal);
   padding: 5px 0 var(--space-3);
 }
