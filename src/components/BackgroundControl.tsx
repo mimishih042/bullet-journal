@@ -964,6 +964,10 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               {exporting ? 'Saving…' : 'Save as PNG'}
             </button>
 
+          </div>
+
+          {/* ── Panel footer — always visible at bottom ── */}
+          <div className={styles.panelFooter}>
             <div className={styles.lineBreak}/>
             {installPrompt && !installed && (
               <button className={styles.subtleBtn} onClick={handleInstall}>
@@ -971,7 +975,6 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
               </button>
             )}
             <FeedbackPrompt context="customization-panel" />
-
           </div>
         </div>
       </div>
