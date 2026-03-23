@@ -337,7 +337,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     if (!wrapper) return;
     setExporting(true);
     try {
-      const scale = 2;
+      const scale = 3;
 
       // Optionally hide month tabs
       const hideTabs = printMode === 'no-tabs';

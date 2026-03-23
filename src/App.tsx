@@ -8,8 +8,6 @@ import { useHistory } from './hooks/useHistory';
 import { HistoryContext } from './context/HistoryContext';
 import UndoIcon from './assets/undo.svg';
 import RedoIcon from './assets/redo.svg';
-import EraserIcon from './assets/eraser.svg'
-import EraserWhiteIcon from './assets/eraser-white.svg'
 
 const today = new Date();
 const todayKey = today.toISOString().split('T')[0];
@@ -31,10 +29,10 @@ export default function App() {
   const [panelOpen, setPanelOpen] = useState(true);
   const [stickersLocked, setStickersLocked] = useState(false);
   const [stickersVisible, setStickersVisible] = useState(true);
-  const [drawMode, setDrawMode] = useState(false);
-  const [drawColor, setDrawColor] = useState('#1a1a1a');
-  const [drawSize, setDrawSize] = useState(4);
-  const [eraserMode, setEraserMode] = useState(false);
+  const drawMode = false;
+  const drawColor = '#1a1a1a';
+  const drawSize = 4;
+  const eraserMode = false;
   const isNarrow = useIsNarrow();
   const history = useHistory();
 
@@ -42,14 +40,6 @@ export default function App() {
   const journalRef = useRef<HTMLDivElement>(null);
   const zoomRef    = useRef({ scale: 1, tx: 0, ty: 0 });
 
-  // Reset zoom when draw mode is turned off
-  useEffect(() => {
-    if (!drawMode) {
-      const el = journalRef.current;
-      if (el) { el.style.transform = ''; el.style.transformOrigin = ''; }
-      zoomRef.current = { scale: 1, tx: 0, ty: 0 };
-    }
-  }, [drawMode]);
 
   const handlePinch = useCallback((
     delta: number,
@@ -196,12 +186,11 @@ export default function App() {
               title="Redo (⌘⇧Z)"
             ><img src={RedoIcon} alt="Redo" className={styles.undoIcon} /></button>
             <button
-              className={`${styles.lockBtn} ${(stickersLocked || drawMode) ? styles.lockBtnOn : ''}`}
-              onClick={() => { if (!drawMode) setStickersLocked(l => !l); }}
-              disabled={drawMode}
-              title={drawMode ? 'Stickers are locked while in draw mode' : stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
+              className={`${styles.lockBtn} ${stickersLocked ? styles.lockBtnOn : ''}`}
+              onClick={() => setStickersLocked(l => !l)}
+              title={stickersLocked ? 'Unlock stickers' : 'Lock stickers'}
             >
-              {(stickersLocked || drawMode) ? '🔒 Unlock stickers' : '🔓 Lock stickers'}
+              {stickersLocked ? '🔒 Unlock stickers' : '🔓 Lock stickers'}
             </button>
             <button
               className={`${styles.lockBtn} ${!stickersVisible ? styles.lockBtnOn : ''}`}
@@ -210,45 +199,6 @@ export default function App() {
             >
               {stickersVisible ? '👁 Hide stickers' : '🙈 Show stickers'}
             </button>
-            <button
-              className={`${styles.lockBtn} ${drawMode ? styles.lockBtnOn : ''}`}
-              onClick={() => { setDrawMode(d => !d); setEraserMode(false); }}
-              title={drawMode ? 'Exit draw mode' : 'Draw mode'}
-            >
-              ✏️ Draw
-            </button>
-
-            {drawMode && (
-              <div className={styles.drawToolbar}>
-                <input
-                  type="color"
-                  className={`${styles.colorPickerInput} ${!eraserMode ? styles.colorPickerActive : ''}`}
-                  value={drawColor}
-                  onChange={e => { setDrawColor(e.target.value); setEraserMode(false); }}
-                  title="Custom color"
-                />
-                <input
-                  type="range"
-                  className={styles.sizeSlider}
-                  min={2}
-                  max={18}
-                  value={drawSize}
-                  onChange={e => setDrawSize(Number(e.target.value))}
-                  title={`Brush size: ${drawSize}`}
-                />
-                <button
-                  className={`${styles.eraserBtn} ${eraserMode ? styles.eraserBtnOn : ''}`}
-                  onClick={() => setEraserMode(e => !e)}
-                  title="Eraser"
-                >
-                  {
-                    eraserMode ?
-                      <img src={EraserWhiteIcon} alt='Erase' className={styles.undoIcon} /> :
-                      <img src={EraserIcon} alt='Erase' className={styles.undoIcon} />
-                  }
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
