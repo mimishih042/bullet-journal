@@ -551,6 +551,7 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     const touch = e.touches[0];
     const startX = touch.clientX;
     const startY = touch.clientY;
+    const el = e.currentTarget as HTMLElement;
 
     // Long-press threshold: 300 ms hold without moving activates the drag.
     // Any finger movement beyond 8 px before the timer fires cancels it and
@@ -561,8 +562,12 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     let timer: ReturnType<typeof setTimeout> | null = null;
     let dragging = false;
 
+    // Show pressing indication immediately
+    el.classList.add(styles.stickerThumbPressing);
+
     const cancelPress = () => {
       if (timer !== null) { clearTimeout(timer); timer = null; }
+      el.classList.remove(styles.stickerThumbPressing);
       document.removeEventListener('touchmove', onEarlyMove);
       document.removeEventListener('touchend',  onEarlyEnd);
       document.removeEventListener('touchcancel', onEarlyEnd);
@@ -581,6 +586,8 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
     timer = setTimeout(() => {
       timer = null;
       dragging = true;
+      el.classList.remove(styles.stickerThumbPressing);
+      navigator.vibrate?.(40);
       document.removeEventListener('touchmove', onEarlyMove);
       document.removeEventListener('touchend',  onEarlyEnd);
       document.removeEventListener('touchcancel', onEarlyEnd);
