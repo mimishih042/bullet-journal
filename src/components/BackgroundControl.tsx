@@ -909,15 +909,17 @@ export default function BackgroundControl({ open, onToggle, year, month }: Props
 
             {/* ── Typeface ── */}
             <p className={styles.sectionLabel}>Typeface</p>
-            <select
-              className={styles.fontSelect}
-              value={calendarFont}
-              onChange={e => applyCalendarFont(e.target.value as FontValue)}
-            >
-              {FONT_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.name}</option>
-              ))}
-            </select>
+            <div className={styles.fontSelectWrapper}>
+              <select
+                className={styles.fontSelect}
+                value={calendarFont}
+                onChange={e => applyCalendarFont(e.target.value as FontValue)}
+              >
+                {FONT_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.name}</option>
+                ))}
+              </select>
+            </div>
 
             {/* ── Background ── */}
             <p className={styles.sectionLabel}>Background</p>
